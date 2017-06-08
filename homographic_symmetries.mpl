@@ -11,7 +11,7 @@ diffeqs_table := proc(y, x)
         [sin, [y(0)=0, D(y)(0)=1]],
         [cos, [y(0)=1, D(y)(0)=0]]]],
 
-    # hyperbolic funcitons
+    # hyperbolic functions
     [(D@@2)(y)(x) - y(x), [
         [sinh, [y(0)=0, D(y)(0)=1]],
         [cosh, [y(0)=1, D(y)(0)=0]]]],
@@ -140,11 +140,10 @@ end proc;
 #  a: a variable or a 2x2 matrix of variables
 # Output: a list of differential equations in diffeq_table and homographies that verifies the equitions when composed with y
 #
-tranformations_diffeqs := proc(deq, y, x, a)
-    local sol, sols, tr, transforms, i , res;
-    transforms := known_transforms(deq, y, x, a);
+transformations_diffeqs := proc(deq, y, x, a)
+    local sol, sols, tr, transformations, i , res;
     i := 1;
-    for tr in transforms do
+    for tr in known_transformations(deq, y, x, a) do
         sols := [solve(tr[2], {a[1,1], a[1,2], a[2,1], a[2,2]})];
         for sol in sols do
             res[i] := [tr[1], sort(expand(subs(op(sol),(a[1,1]*x+a[1,2])/(a[2,1]*x+a[2,2])), x), x)];
@@ -168,7 +167,7 @@ dsolve_transformations := proc(deq, y, x, f, a, init_point:=0, conditions:=[])
     local deq2, eq, eq2, cis, i, j, Dx, res, eqd, sol, coefs, eqn;
     Dx := proc (_) options operator, arrow; diff(_, x) end proc;
     eqn := 1;
-    for eq in tranformations_diffeqs(deq, y, x, a) do
+    for eq in transformations_diffeqs(deq, y, x, a) do
         eq[2] := subs(op(conditions), eq[2]);
         for eqd in diffeqs_table(y, x) do if eqd[1] = eq[1] then
             cis := {};
