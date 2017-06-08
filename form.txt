@@ -1,0 +1,27 @@
+> dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, cos, [[a, b], [c, d]], 0, [d=1])
+       [o(cos)(x + b) = -sin(b) sin(x) + cos(b) cos(x), 
+
+         o(cos)(-x + b) = sin(b) sin(x) + cos(b) cos(x)]
+;
+> dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, sin, [[a, b], [c, d]], 0, [d=1])
+       [o(sin)(x + b) = cos(b) sin(x) + sin(b) cos(x), 
+
+         o(sin)(-x + b) = -cos(b) sin(x) + sin(b) cos(x)]
+;
+> dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], 0, [d=1, c=1])
+       [         /  x       1  \               1     
+       [o(arctan)|----- - -----| = arctan(x) - - Pi, 
+       [         \x + 1   x + 1/               4     
+
+                  /    x       1  \                1   ]
+         o(arctan)|- ----- + -----| = -arctan(x) + - Pi]
+                  \  x + 1   x + 1/                4   ]
+;
+> dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], 0, [d=1, c=0])
+     [o(arctan)(x) = arctan(x), o(arctan)(-x) = -arctan(x)]
+;
+> dsolve_symmetries(D(y)(x) - y(x), y, x, exp, [[a, b], [c, d]], 0, [d=1])
+                [o(exp)(x + b) = exp(b) exp(x)]
+;
+> 
+;
