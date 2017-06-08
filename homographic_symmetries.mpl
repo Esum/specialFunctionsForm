@@ -46,7 +46,7 @@ symmetries := proc(deq, y, x, a)
     poly_deq := collect(poly_deq/lcoeff(poly_deq, Dx), Dx);
     poly_sym := DETools[de2diffop](gfun[algebraicsubs](deq, gfun[algfuntoalgeq]((a[1,1]*x+a[1,2])/(a[2,1]*x+a[2,2]), y(x)), y(x)), y(x), [Dx, x]);
     poly_sym := collect(poly_sym/lcoeff(poly_sym, Dx), Dx);
-    sys := {op(map(coeffs, map(numer, [coeffs(collect(poly_deq - poly_sym, Dx), Dx)]), x))};
+    sys := {op(map(coeffs, map(sort, map(collect, map(numer, [coeffs(sort(collect(poly_deq - poly_sym, Dx), Dx), Dx)]), x), x), x))};
     basis := Groebner[Basis](sys union {-a[1,1]*a[2,2]*t+a[1,2]*a[2,1]*t+1}, lexdeg([t], [a[1,1], a[1,2], a[2,1], a[2,2]]));
     remove(has, basis, t)
 end proc;
