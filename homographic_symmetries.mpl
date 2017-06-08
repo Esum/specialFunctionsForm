@@ -59,14 +59,9 @@ end proc;
 #  a: a variable or a 2x2 matrix of variables
 # Output: a list of homographies that stabilize deq when composed with y
 symmetric_diffeqs := proc(deq, y, x, a)
-    local sol, sols, i, res;
+    local sols;
     sols := [solve(symmetries(deq, y, x, a))];
-    i := 1;
-    for sol in sols do
-        res[i] := sort(expand(subs(op(sol),(a[1,1]*x+a[1,2])/(a[2,1]*x+a[2,2])), x), x);
-        i := i + 1
-    end do;
-    [seq(res[j], j=1..(i-1))]
+    [seq(sort(expand(subs(op(sol),(a[1,1]*x+a[1,2])/(a[2,1]*x+a[2,2])), x), x), sol=sols)]
 end proc;
 
 #dsolve_symmetries
