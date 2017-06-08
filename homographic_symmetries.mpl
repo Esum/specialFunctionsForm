@@ -7,9 +7,14 @@
 diffeqs_table := proc(y, x)
 {
     # triginonometric functions
-    [((D@@2)(y))(x) + y(x), [
+    [(D@@2)(y)(x) + y(x), [
         [sin, [y(0)=0, D(y)(0)=1]],
         [cos, [y(0)=1, D(y)(0)=0]]]],
+
+    # hyperbolic funcitons
+    [(D@@2)(y)(x) - y(x), [
+        [sinh, [y(0)=0, D(y)(0)=1]],
+        [cosh, [y(0)=1, D(y)(0)=0]]]],
 
     [(x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), [
         [arctan, [y(0)=0, D(y)(0)=1]],
@@ -40,6 +45,7 @@ values_table := {
 #  x: the variable of deq
 #  a: a variable or a 2x2 matrix of variables
 # Output: a set of polynomials of variables a[i,j] (1 <= i,j <= 2) that must be null to stabilize the differetial equation of y((a[1,1]*x+a[1,2])/(a[2,1]*x+a[2,2]))
+#
 symmetries := proc(deq, y, x, a)
     local poly_sym, poly_deq, sys, basis;
     poly_deq := DETools[de2diffop](deq, y(x), [Dx, x]);
@@ -58,6 +64,7 @@ end proc;
 #  x: the variable of deq
 #  a: a variable or a 2x2 matrix of variables
 # Output: a list of homographies that stabilize deq when composed with y
+#
 symmetric_diffeqs := proc(deq, y, x, a)
     local sols;
     sols := [solve(symmetries(deq, y, x, a))];
@@ -73,6 +80,7 @@ end proc;
 #  init_point(=0): the point used to determine inital conditions
 #  conditions: additionnal conditions for a
 # Output: a list of formulas satisfied by homogrpahic compositions of f
+#
 dsolve_symmetries := proc(deq, y, x, f, a, init_point:=0, conditions:=[])
     local eq, eq2, cis, i, j, Dx, res, eqd, sol, coefs, eqn;
     Dx := proc (_) options operator, arrow; diff(_, x) end proc;
