@@ -59,7 +59,7 @@ Ses coefficients dans la base sont donc {l[1] = 1, l[2] = -1/2*Pi}, d'où :
 		lim (arctan ∘ h)^(1)(-1/x) = 1
 	x -> 0, x < 0
 Ses coefficients dans la base sont donc {a = a, b = b, c = c, d = d, l[1] = 1, l[2] = 1/2*Pi}, d'où :
-	arctan(-1/x) = arctan(x)+1/2*Pi lorsque x > 0
+	arctan(-1/x) = arctan(x)+1/2*Pi lorsque x < 0
 
 La fonction h = x ↦ 1/x admet un pôle en x = 0
 (arctan ∘ h) satisfait la même equation différentielle que arctan
@@ -79,7 +79,7 @@ Ses coefficients dans la base sont donc {l[1] = -1, l[2] = 1/2*Pi}, d'où :
 		lim (arctan ∘ h)^(1)(1/x) = -1
 	x -> 0, x < 0
 Ses coefficients dans la base sont donc {a = a, b = b, c = c, d = d, l[1] = -1, l[2] = -1/2*Pi}, d'où :
-	arctan(1/x) = -arctan(x)-1/2*Pi lorsque x > 0
+	arctan(1/x) = -arctan(x)-1/2*Pi lorsque x < 0
 
          [[         /  1\               1          ]  
          [[o(arctan)|- -| = arctan(x) - - Pi, 0 < x], 
@@ -114,3 +114,4 @@ Ses coefficients dans la base sont donc {l[1] = exp(b)}, d'où :
              [      /      /  2    \  \          ]
              [o(cos)\RootOf\_Z  + 1/ x/ = cosh(x)]
 ;
+

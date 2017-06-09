@@ -198,7 +198,7 @@ dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
                         res[eqn] := [o(f)(eq2) = add(subs(op(sol), l[j])*eqd[2][j][1](x), j=1..nops(eqd[2])), x < eqd[3]];
                         if proof then
                             printf("Ses coefficients dans la base sont donc %a, d'où :\n", sol);
-                            printf("\t%a(%a) = %a lorsque %a > %a\n\n", f, eq, op(res[eqn][1])[2], x, eqd[3])
+                            printf("\t%a(%a) = %a lorsque %a < %a\n\n", f, eq, op(res[eqn][1])[2], x, eqd[3])
                         end if;
                         eqn := eqn + 1
                     end if
