@@ -1,117 +1,166 @@
 > dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, cos, [[a, b], [c, d]], [d=1, b=a], true)
-(cos ∘ h) = x ↦ cos(x+a) satisfait la même equation différentielle que cos
-Une base de cette équation est : [sin, cos]
-cos ∘ h à pour conditions initiales :
+(cos ∘ h) = x ↦ cos(a+x) satisfies the same differential equation as cos
+Which has a basis : [sin, cos]
+(cos ∘ h) has the following initial conditions :
 	(cos ∘ h)^(0)(0) = cos(a)
 	(cos ∘ h)^(1)(0) = -sin(a)
-Ses coefficients dans la base sont donc {l[1] = -sin(a), l[2] = cos(a)}, d'où :
-	cos(x+a) = -sin(a)*sin(x)+cos(a)*cos(x)
+Its coefficients in the basis are {l[1] = -sin(a), l[2] = cos(a)}, hence :
+	cos(a+x) = -sin(a)*sin(x)+cos(a)*cos(x)
 
-(cos ∘ h) = x ↦ cos(-x+a) satisfait la même equation différentielle que cos
-Une base de cette équation est : [sin, cos]
-cos ∘ h à pour conditions initiales :
+(cos ∘ h) = x ↦ cos(-x+a) satisfies the same differential equation as cos
+Which has a basis : [sin, cos]
+(cos ∘ h) has the following initial conditions :
 	(cos ∘ h)^(0)(0) = cos(a)
 	(cos ∘ h)^(1)(0) = sin(a)
-Ses coefficients dans la base sont donc {l[1] = sin(a), l[2] = cos(a)}, d'où :
+Its coefficients in the basis are {l[1] = sin(a), l[2] = cos(a)}, hence :
 	cos(-x+a) = sin(a)*sin(x)+cos(a)*cos(x)
 
-       [o(cos)(x + a) = -sin(a) sin(x) + cos(a) cos(x), 
+        [(cos)(a + x) = -sin(a) sin(x) + cos(a) cos(x), 
 
-         o(cos)(-x + a) = sin(a) sin(x) + cos(a) cos(x)]
+          (cos)(-x + a) = sin(a) sin(x) + cos(a) cos(x)]
 ;
 > dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, sin, [[a, b], [c, d]], [d=1, b=a], true)
-(sin ∘ h) = x ↦ sin(x+a) satisfait la même equation différentielle que sin
-Une base de cette équation est : [sin, cos]
-sin ∘ h à pour conditions initiales :
+(sin ∘ h) = x ↦ sin(a+x) satisfies the same differential equation as sin
+Which has a basis : [sin, cos]
+(sin ∘ h) has the following initial conditions :
 	(sin ∘ h)^(0)(0) = sin(a)
 	(sin ∘ h)^(1)(0) = cos(a)
-Ses coefficients dans la base sont donc {l[1] = cos(a), l[2] = sin(a)}, d'où :
-	sin(x+a) = cos(a)*sin(x)+sin(a)*cos(x)
+Its coefficients in the basis are {l[1] = cos(a), l[2] = sin(a)}, hence :
+	sin(a+x) = cos(a)*sin(x)+sin(a)*cos(x)
 
-(sin ∘ h) = x ↦ sin(-x+a) satisfait la même equation différentielle que sin
-Une base de cette équation est : [sin, cos]
-sin ∘ h à pour conditions initiales :
+(sin ∘ h) = x ↦ sin(-x+a) satisfies the same differential equation as sin
+Which has a basis : [sin, cos]
+(sin ∘ h) has the following initial conditions :
 	(sin ∘ h)^(0)(0) = sin(a)
 	(sin ∘ h)^(1)(0) = -cos(a)
-Ses coefficients dans la base sont donc {l[1] = -cos(a), l[2] = sin(a)}, d'où :
+Its coefficients in the basis are {l[1] = -cos(a), l[2] = sin(a)}, hence :
 	sin(-x+a) = -cos(a)*sin(x)+sin(a)*cos(x)
 
-       [o(sin)(x + a) = cos(a) sin(x) + sin(a) cos(x), 
+       [(sin)(a + x) = cos(a) sin(x) + sin(a) cos(x), 
 
-         o(sin)(-x + a) = -cos(a) sin(x) + sin(a) cos(x)]
+         (sin)(-x + a) = -cos(a) sin(x) + sin(a) cos(x)]
 ;
 > dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [b=1, d=0, c=1], true)
-La fonction h = x ↦ -1/x admet un pôle en x = 0
-(arctan ∘ h) satisfait la même equation différentielle que arctan
-Une base de cette équation est : [arctan, x -> 1]
-arctan ∘ h à pour conditions initiales :
+The function h = x ↦ -1/x has a singularity at x = 0
+(arctan ∘ h) = x ↦ arctan(-1/x) satisfies the same differential equation as arctan
+Which has a basis : [arctan, x -> 1]
+(arctan ∘ h) has the following initial conditions :
 	Sur ]0, +∞[:
-		lim (arctan ∘ h)^(0)(-1/x) = -1/2*Pi
-	x -> 0, x > 0
-		lim (arctan ∘ h)^(1)(-1/x) = 1
-	x -> 0, x > 0
-Ses coefficients dans la base sont donc {l[1] = 1, l[2] = -1/2*Pi}, d'où :
-	arctan(-1/x) = arctan(x)-1/2*Pi lorsque x > 0
+	(arctan ∘ h)^(0)(0) = -1/2*Pi
+	(arctan ∘ h)^(1)(0) = 1
+Its coefficients in the basis are {l[1] = 1, l[2] = -1/2*Pi}, hence :
+	arctan(-1/x) = arctan(x)-1/2*Pi when x > 0
 
 	Sur ]-∞, 0[:
 		lim (arctan ∘ h)^(0)(-1/x) = 1/2*Pi
 	x -> 0, x < 0
 		lim (arctan ∘ h)^(1)(-1/x) = 1
 	x -> 0, x < 0
-Ses coefficients dans la base sont donc {a = a, b = b, c = c, d = d, l[1] = 1, l[2] = 1/2*Pi}, d'où :
-	arctan(-1/x) = arctan(x)+1/2*Pi lorsque x < 0
+Its coefficients in the basis are {l[1] = 1, l[2] = -1/2*Pi}, hence :
+	arctan(-1/x) = arctan(x)-1/2*Pi when x < 0
 
-La fonction h = x ↦ 1/x admet un pôle en x = 0
-(arctan ∘ h) satisfait la même equation différentielle que arctan
-Une base de cette équation est : [arctan, x -> 1]
-arctan ∘ h à pour conditions initiales :
+The function h = x ↦ 1/x has a singularity at x = 0
+(arctan ∘ h) = x ↦ arctan(1/x) satisfies the same differential equation as arctan
+Which has a basis : [arctan, x -> 1]
+(arctan ∘ h) has the following initial conditions :
 	Sur ]0, +∞[:
-		lim (arctan ∘ h)^(0)(1/x) = 1/2*Pi
-	x -> 0, x > 0
-		lim (arctan ∘ h)^(1)(1/x) = -1
-	x -> 0, x > 0
-Ses coefficients dans la base sont donc {l[1] = -1, l[2] = 1/2*Pi}, d'où :
-	arctan(1/x) = -arctan(x)+1/2*Pi lorsque x > 0
+	(arctan ∘ h)^(0)(0) = 1/2*Pi
+	(arctan ∘ h)^(1)(0) = -1
+Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
+	arctan(1/x) = -arctan(x)+1/2*Pi when x > 0
 
 	Sur ]-∞, 0[:
 		lim (arctan ∘ h)^(0)(1/x) = -1/2*Pi
 	x -> 0, x < 0
 		lim (arctan ∘ h)^(1)(1/x) = -1
 	x -> 0, x < 0
-Ses coefficients dans la base sont donc {a = a, b = b, c = c, d = d, l[1] = -1, l[2] = -1/2*Pi}, d'où :
-	arctan(1/x) = -arctan(x)-1/2*Pi lorsque x < 0
+Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
+	arctan(1/x) = -arctan(x)+1/2*Pi when x < 0
 
-         [[         /  1\               1          ]  
-         [[o(arctan)|- -| = arctan(x) - - Pi, 0 < x], 
-         [[         \  x/               2          ]  
+         [[        /  1\               1          ]  
+         [[(arctan)|- -| = arctan(x) - - Pi, 0 < x], 
+         [[        \  x/               2          ]  
 
-           [         /  1\               1          ]  
-           [o(arctan)|- -| = arctan(x) + - Pi, x < 0], 
-           [         \  x/               2          ]  
+           [        /  1\               1          ]  
+           [(arctan)|- -| = arctan(x) - - Pi, x < 0], 
+           [        \  x/               2          ]  
 
-           [         /1\                1          ]  
-           [o(arctan)|-| = -arctan(x) + - Pi, 0 < x], 
-           [         \x/                2          ]  
+           [        /1\                1          ]  
+           [(arctan)|-| = -arctan(x) + - Pi, 0 < x], 
+           [        \x/                2          ]  
 
-           [         /1\                1          ]]
-           [o(arctan)|-| = -arctan(x) - - Pi, x < 0]]
-           [         \x/                2          ]]
+           [        /1\                1          ]]
+           [(arctan)|-| = -arctan(x) + - Pi, x < 0]]
+           [        \x/                2          ]]
 ;
-> dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [d=1, c=0])
-     [o(arctan)(x) = arctan(x), o(arctan)(-x) = -arctan(x)]
-;
-> dsolve_symmetries(D(y)(x) - y(x), y, x, exp, [[a, b], [c, d]], [d=1], true)
-(exp ∘ h) = x ↦ exp(x+b) satisfait la même equation différentielle que exp
-Une base de cette équation est : [exp]
-exp ∘ h à pour conditions initiales :
-	(exp ∘ h)^(0)(0) = exp(b)
-Ses coefficients dans la base sont donc {l[1] = exp(b)}, d'où :
-	exp(x+b) = exp(b)*exp(x)
+> dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [d=1, c=0], true)
+(arctan ∘ h) = x ↦ arctan(x) satisfies the same differential equation as arctan
+Which has a basis : [arctan, x -> 1]
+(arctan ∘ h) has the following initial conditions :
+	(arctan ∘ h)^(0)(0) = 0
+	(arctan ∘ h)^(1)(0) = 1
+Its coefficients in the basis are {l[1] = 1, l[2] = 0}, hence :
+	arctan(x) = arctan(x)
 
-                [o(exp)(x + b) = exp(b) exp(x)]
-;
-> dsolve_transformations((D@@2)(y)(x) + y(x), y, x, cos, [[a, b], [c, d]], 0, [b=0, d=1])
-             [      /      /  2    \  \          ]
-             [o(cos)\RootOf\_Z  + 1/ x/ = cosh(x)]
-;
+(arctan ∘ h) = x ↦ arctan(-x) satisfies the same differential equation as arctan
+Which has a basis : [arctan, x -> 1]
+(arctan ∘ h) has the following initial conditions :
+	(arctan ∘ h)^(0)(0) = 0
+	(arctan ∘ h)^(1)(0) = -1
+Its coefficients in the basis are {l[1] = -1, l[2] = 0}, hence :
+	arctan(-x) = -arctan(x)
 
+      [(arctan)(x) = arctan(x), (arctan)(-x) = -arctan(x)]
+;
+> dsolve_symmetries(D(y)(x) - y(x), y, x, exp, [[a, b], [c, d]], [b=a, d=1], true)
+(exp ∘ h) = x ↦ exp(a+x) satisfies the same differential equation as exp
+Which has a basis : [exp]
+(exp ∘ h) has the following initial conditions :
+	(exp ∘ h)^(0)(0) = exp(a)
+Its coefficients in the basis are {l[1] = exp(a)}, hence :
+	exp(a+x) = exp(a)*exp(x)
+
+                 [(exp)(a + x) = exp(a) exp(x)]
+;
+> dsolve_symmetries(x*(D@@2)(y)(x) + D(y)(x), y, x, ln, [[a, b], [c, d]], [b=a, d=1, c=1], true)
+(ln ∘ h) = x ↦ ln(a*x) satisfies the same differential equation as ln
+Which has a basis : [ln, x -> 1]
+(ln ∘ h) has the following initial conditions :
+	(ln ∘ h)^(0)(1) = ln(a)
+	(ln ∘ h)^(1)(1) = 1
+Its coefficients in the basis are {l[1] = 1, l[2] = ln(a)}, hence :
+	ln(a*x) = ln(x)+ln(a)
+
+(ln ∘ h) = x ↦ ln(a/x) satisfies the same differential equation as ln
+Which has a basis : [ln, x -> 1]
+(ln ∘ h) has the following initial conditions :
+	(ln ∘ h)^(0)(1) = ln(a)
+	(ln ∘ h)^(1)(1) = -1
+Its coefficients in the basis are {l[1] = -1, l[2] = ln(a)}, hence :
+	ln(a/x) = -ln(x)+ln(a)
+
+     [                               /a\                 ]
+     [(ln)(a x) = ln(x) + ln(a), (ln)|-| = -ln(x) + ln(a)]
+     [                               \x/                 ]
+;
+> dsolve_symmetries((D@@2)(y)(x) - y(x), y, x, sinh, [[a, b], [c, d]], [b=a, d=1], true)
+(sinh ∘ h) = x ↦ sinh(a+x) satisfies the same differential equation as sinh
+Which has a basis : [sinh, cosh]
+(sinh ∘ h) has the following initial conditions :
+	(sinh ∘ h)^(0)(0) = sinh(a)
+	(sinh ∘ h)^(1)(0) = cosh(a)
+Its coefficients in the basis are {l[1] = cosh(a), l[2] = sinh(a)}, hence :
+	sinh(a+x) = cosh(a)*sinh(x)+sinh(a)*cosh(x)
+
+(sinh ∘ h) = x ↦ sinh(-x+a) satisfies the same differential equation as sinh
+Which has a basis : [sinh, cosh]
+(sinh ∘ h) has the following initial conditions :
+	(sinh ∘ h)^(0)(0) = sinh(a)
+	(sinh ∘ h)^(1)(0) = -cosh(a)
+Its coefficients in the basis are {l[1] = -cosh(a), l[2] = sinh(a)}, hence :
+	sinh(-x+a) = -cosh(a)*sinh(x)+sinh(a)*cosh(x)
+
+     [(sinh)(a + x) = cosh(a) sinh(x) + sinh(a) cosh(x), 
+
+       (sinh)(-x + a) = -cosh(a) sinh(x) + sinh(a) cosh(x)]
+;
