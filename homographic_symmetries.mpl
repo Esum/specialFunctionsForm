@@ -1,40 +1,4 @@
 #diffeqs_table
-# Input:
-#  y: the function variable
-#  x: the variable
-# Output: a table of linear differential equations and a basis of their solutions
-#
-diffeqs_table2 := proc(y, x)
-{
-    # triginonometric functions
-    [(D@@2)(y)(x) + y(x), [
-        [sin, [y(0)=0, D(y)(0)=1]],
-        [cos, [y(0)=1, D(y)(0)=0]]],
-        0],
-
-    # hyperbolic functions
-    [(D@@2)(y)(x) - y(x), [
-        [sinh, [y(0)=0, D(y)(0)=1]],
-        [cosh, [y(0)=1, D(y)(0)=0]]],
-        0],
-
-    [(x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), [
-        [arctan, [y(0)=0, D(y)(0)=1]],
-        [proc (x) options operator, arrow; 1 end proc, [y(0)=1, D(y)(0)=0]]],
-        0],
-
-    [(D)(y)(x) - y(x), [
-        [exp, [y(0)=1]]],
-        0],
-
-    [(D@@2)(y)(x) + 2*x*D(y)(x), [
-        [erf, [y(0)=0, D(y)(0)=2/sqrt(pi)]],
-        [erfc, [y(0)=1, D(y)(0)=-2/sqrt(pi)]]],
-        0]
-}
-end proc;
-
-#diffeqs_table
 # A table inexed by differential equations with values its basis of solutions in the format
 # [[e1, [e1(x0), e1'(x0), ..., e1^(n)(x0)],
 #   ...
@@ -114,7 +78,22 @@ symmetric_diffeqs := proc(deq, y, x, a)
     [seq(expand(subs(op(sol),(a[1,1]*x+a[1,2])/(a[2,1]*x+a[2,2])), x), sol=sols)]
 end proc;
 
+#proof_intro
+# Input:
+#  f: a function
+#  x: a variable
+#  eq: an expression
+#  basis: a basis of solutions in the format of diffeqs_table
+# Output: NULL (prints the begining of the proof of the symmetry for f(eq))
+# 
+proof_intro := proc(f, x, eq, basis, order)
+    printf("(%a ∘ h) = %a ↦ %a(%a) satisfies the same differential equation as %a\n", f, x, f, eq, f);
+    printf("Which has a basis of solutions : %a\n", [seq(basis[j][1], j=1..order)]);
+    printf("(%a ∘ h) has the following initial conditions :\n", f);
+end proc;
+
 #dsolve_symmetries
+# Input:
 #  deq: a linear differential equation
 #  y: the function variable of deq
 #  x: the variable of deq
@@ -141,11 +120,9 @@ dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
                 if basis[-1] = sing then
                     printf("The function h = %a ↦ %a has a singularity at %a = %a\n", x, eq, x, subs(op(conditions), -a[2,2]/a[2,1]))
                 end if;
-                printf("(%a ∘ h) = %a ↦ %a(%a) satisfies the same differential equation as %a\n", f, x, f, eq, f);
-                printf("Which has a basis : %a\n", [seq(basis[j][1], j=1..order)]);
-                printf("(%a ∘ h) has the following initial conditions :\n", f);
+                proof_intro(f, x, eq, basis, order);
                 if basis[-1] = sing then
-                    printf("\tSur ]%a, +∞[:\n", basis[-1])
+                    printf("\tOn ]%a, +∞[:\n", basis[-1])
                 end if
             end if;
             cis := {};
@@ -183,7 +160,7 @@ dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
             if basis[-1] = sing then
                 cis := {};
                 if proof then
-                    printf("\tSur ]-∞, %a[:\n", basis[-1])
+                    printf("\tOn ]-∞, %a[:\n", basis[-1])
                 end if;
                 for i from 1 to order do
                     if proof then
@@ -204,6 +181,17 @@ dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
         end if
     end do;
     subs(op(values_table), [seq(res[j], j=1..(eqn-1))])
+end proc;
+
+#diffeq_singularities
+# Input:
+#  deq: a linear differential equation with polynomials as coefficiens
+#  y: the function variable of deq
+#  x: the variable of deq
+# Output: the list of singularities of deq
+#
+diffeq_singularities := proc(deq, y, x)
+    return solve([PDETools[dcoeffs](deq, y(x))][1], x)
 end proc;
 
 #known_transformations
