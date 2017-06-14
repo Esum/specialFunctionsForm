@@ -220,7 +220,6 @@ derive := module ()
 
     Derive := proc(expr, x, proof:=0)
         local res;
-        print(expr, x);
         if type(expr, ratpoly) then
             # We know how to differentiate a rational fraction
             res := diff(expr, x);
