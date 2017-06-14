@@ -1,3 +1,137 @@
+recseq := module ()
+
+    description "Tools for recursive sequences";
+
+    export rscreate, rsdiff, `rseq=rseq`, diffeqtors, rstodiffeq, fpscreate, fpsdiff, fpsradius;
+
+    #rscreate
+    # Input:
+    #  rec_eq: the equation of the recursive formula
+    #  u: the name of the sequence
+    #  n: the index variable
+    #  cis(={}): initial conditions for the sequence u(n)
+    # Output: a formatted reprensentation of the recursive sequence u(n)
+    #
+    rscreate := proc(rec_eq, u, n, cis:={})
+        [rec_eq, u, n, cis];
+    end proc;
+
+    #rsdiff
+    # Input:
+    #  rs: a recursive sequence u(n) from rscreate
+    # Output: the recursive sequence associated to u(n), i.e. (n+1) * u(n+1)
+    #
+    rsdiff := proc(rs)
+        local rs_op, u, n, cis, i, diffcis, max_order, orders, common_factors;
+        u := rs[2];
+        n := rs[3];
+        rs_op := [op(rs[1])];
+        cis := rs[4];
+        # orders is the list of the i such that u(n+i) appears in rs
+        if op(0, rs_op) = u then
+            orders := [op(rs_op)-n]
+        elif op(0, rs_op) = `*` then
+            orders := [op([op(rs_op)][-1])]
+        else 
+            orders := [seq(0, i=1..nops(rs_op))];
+            for i from 1 to nops(rs_op) do
+                if op(0, rs_op[i]) = `*` then orders[i] := op([op(rs_op[i])][-1])-n else orders[i] := op(rs_op[i])-n end if
+            end do
+        end if;
+        max_order := max(orders);
+        if min(orders) = 0 then
+            # shift the orders
+            orders := [seq(orders[j]+1, j=1..nops(orders))];
+            rs_op := subs(n=n+1, rs_op)
+        end if;
+        for i from 1 to nops(rs_op) do
+            # mutiply rs by the correct polynomial to compute the recursive equation of the derivative
+            if op(0, rs_op[i]) = `*` then
+                rs_op[i] := subsop(nops(rs_op[i])=u(n+orders[i]-1), rs_op[i]);
+            else 
+                rs_op[i] := u(n+orders[i]-1)
+            end if;
+            rs_op[i] := mul(n+orders[j], j in remove(`=`, [seq(j, j=1..nops(orders))], i)) * rs_op[i]
+        end do;
+        # simplify the new equation
+        common_factors := {op(rs_op[1])};
+        for i from 2 to nops(rs_op) do if op(0, rs_op[i]) = `*` then
+            common_factors := common_factors intersect {op(rs_op[i])}
+        else
+            common_factors := {}
+        end if end do;
+        for i from 1 to nops(rs_op) do
+            rs_op[i] := remove(`in`, rs_op[i], common_factors)
+        end do;
+        # find the next initial condition if needed
+        cis := cis union solve(subs(op(cis), subs(n=0, rs[1])), {u(max_order)});
+        diffcis := {};
+        for i in cis do
+            if 0 < op(op(i)[1]) and nops(diffcis) < max_order then
+                diffcis := diffcis union {u(op(op(i)[1])-1)=(op(op(i)[1]))*op(i)[2]}
+            end if
+        end do;
+        rscreate(`+`(op(rs_op)), u, n, diffcis)
+    end proc;
+
+    #`rseq=rseq`
+    # Input:
+    #  rs1: a recursive sequence
+    #  rs2: a recursive sequence
+    # Output: false if rs1 <> rs2
+    #
+    `rseq=rseq` := proc(rs1, rs2)
+        local eq1, u, n, cisu, eq2, v, m, cisv;
+        eq1 := rs1[1];
+        u := rs1[2];
+        n := rs1[3];
+        cisu := rs1[4];
+        eq2 := rs2[1];
+        v := rs2[2];
+        m := rs2[3];
+        cisv := rs2[4];
+        eq2 := subs(v=u, m=n, eq2);
+        cisv := subs(v=u, cisv);
+        eq1-eq2 = 0 and cisu = cisv
+    end proc;
+
+    #diffeqtors
+    # Input:
+    #  deq: a differential equtation
+    #  y(x): the function of deq
+    #  u: the name of recursive sequence
+    #  n: the index vairable
+    # Output: the recursive sequence of power series that is solution of deq
+    #
+    diffeqtors := proc(deq, y, u, n)
+        local rs, cis;
+        rs := gfun[diffeqtorec](deq, y, u(n));
+        if type(rs, set) then
+            cis := {seq([op(rs)][i], i=2..nops(rs))};
+            rs := [op(rs)][1]
+        else
+            cis := {}
+        end if;
+        if op(0, rs) =  `*` then
+            rs := factor(rs)
+        elif op(0, rs) = `+` then
+            rs := `+`(seq(factor([op(rs)][i]), i=1..nops(rs)))
+        end if;
+        rscreate(rs, u, n, cis)
+    end proc;
+
+    #rstodiffeq
+    # Input:
+    #  rs: a recursive sequence
+    #  y(x): the function of the differential equation
+    # Output: a differential equation that is canceled by the power series of the sequence rs
+    #
+    rstodiffeq := proc(rs, y)
+        gfun[rectodiffeq]({rs[1]} union rs[4], rs[2](rs[3]), y);
+    end proc;
+
+end module;
+
 #diffeqs_table
 # A table inexed by differential equations with values its basis of solutions in the format
 # [[e1, [e1(x0), e1'(x0), ..., e1^(n)(x0)],
@@ -30,10 +164,83 @@ diffeqs_table[(D@@2)(_y)(_x) + 2*_x*D(_y)(_x)] := [
     [erfc, [_y(0)=1, D(_y)(0)=-2/sqrt(pi)]],
     0];
 
-diffeqs_table[_x*(D@@2)(_y)(_x) + (D)(_y)(_x)] := [
-    [ln, [_y(1)=0, D(_y)(1)=1]],
-    [proc (x) options operator, arrow; 1 end proc, [_y(1)=1, D(_y)(1)=0]],
+diffeqs_table[(_x+1)*(D@@2)(_y)(_x) + (D)(_y)(_x)] := [
+    [ln, [_y(0)=0, D(_y)(0)=1]],
+    [proc (x) options operator, arrow; 1 end proc, [_y(0)=1, D(_y)(0)=0]],
     1];
+
+
+derive := module ()
+
+    description "Formal derivation of special functions with their differential equation";
+
+    export Derive;
+
+    local derive_node, get_diffeq;
+
+    get_diffeq[sin] := (D@@2)(_y)(_x) + _y(_x);
+    get_diffeq[cos] := (D@@2)(_y)(_x) + _y(_x);
+    get_diffeq[exp] := (D)(_y)(_x) - _y(_x);
+    get_diffeq[ln] := (_x+1)*(D@@2)(_y)(_x) + (D)(_y)(_x);
+    get_diffeq[arctan] := (_x^2 + 1)*(D@@2)(_y)(_x) + 2*_x*(D)(_y)(_x);
+
+    derive_node := proc(f, deq, y, x, proof:=false)
+        local gdeq, ddeq, rs, df, cis, basis, in_basis, i, sys;
+        gdeq := subs(x=_x, y=_y, deq);
+        if assigned(diffeqs_table[gdeq]) then
+            basis := diffeqs_table[gdeq][1..-2];
+            rs := [seq(recseq[diffeqtors]({gdeq} union {op(basis[i][2])}, _y(_x), u, n), i=1..nops(basis))];
+            in_basis := 0;
+            for i from 1 to nops(basis) do
+                if f = basis[i][1] then
+                    df := recseq[rsdiff](rs[i]);
+                    if df[1] = rs[1][1] then
+                        in_basis := i
+                    end if
+                end if
+            end do;
+            if in_basis > 0 then
+                # the derivative can be expressed in the basis of solutions of deq
+                cis := {};
+                for i from 1 to nops(basis) do
+                    cis := cis union {op([op(df[4])][i])[2] - add(l[j]*[op([op(rs[j][4])][i])][2], j=1..nops(basis))}
+                end do;
+                # do a gaussian elimination to find the coefficients in the basis
+                cis := solve(cis, {seq(l[j], j=1..nops(basis))});
+                return subs(op(cis), add(l[j] * basis[j][1] , j=1..nops(basis)))(x)
+            else
+                ddeq := recseq[rstodiffeq](df, y(x));
+                if PDETools[difforder](ddeq, y(x)) = 0 then
+                    # the value of y(x) can be computed directly by isolating y(x) in the equation
+                    return subs(x=x-diffeqs_table[gdeq][-1], solve(ddeq, y(x)))
+                end if
+            end if
+        end if;
+    end proc;
+
+    Derive := proc(expr, x, proof:=0)
+        local res;
+        if type(expr, ratpoly) then
+            # We know how to differentiate a rational fraction
+            res := diff(expr, x);
+            if proof > 0 then
+                printf("%a is rational fraction in %a, thus its derivative is: %a\n", expr, x, res)
+            end if;
+            return res
+        elif op(0, expr) = `+` then
+            return `+`(op(map(Derive, [op(expr)], x, proof)))
+        elif op(0, expr) = `*` then
+            return `+`(seq(`*`(Derive([op(expr)][i], x), seq([op(expr)][j], j in remove(`=`, [seq(j, j=1..nops(expr))], i))), i=1..nops(expr)))
+        elif op(0, expr) = `-` then
+            return -(Derive(op(expr), x))
+        elif assigned(get_diffeq(op(0, expr))) then
+            # the node is a special function that we know
+            return Derive(op(expr), x)*subs(_x=op(expr), derive_node(op(0, expr), get_diffeq[op(0, expr)], _y, _x))
+        end if;
+    end proc;
+
+end module;
+
 
 #values_table: a table of known values for special functions
 values_table := {
@@ -104,9 +311,9 @@ end proc;
 # Output: a list of formulas satisfied by homographic compositions of f
 #
 dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
-    local order, eq, sing, eq2, cis, i, value, Dx, res, basis, sol, coefs, eqn;
+    local order, eq, gdeq, sing, eq2, cis, i, value, Dx, res, basis, sol, coefs, eqn;
     order := PDETools[difforder](deq);
-    Dx := proc (_) options operator, arrow; diff(_, x) end proc;
+    Dx := proc (_) options operator, arrow; derive[Derive](_, x) end proc;
     eqn := 1;
     for eq in symmetric_diffeqs(deq, y, x, a) do
         eq := subs(op(conditions), eq);
@@ -114,71 +321,76 @@ dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
         if sing <> NULL then
             sing := op(op(sing))[2]
         end if;
-        basis := diffeqs_table[subs(x=_x, y=_y, deq)];
-        if type(basis, list) then
-            if proof then
-                if basis[-1] = sing then
-                    printf("The function h = %a ↦ %a has a singularity at %a = %a\n", x, eq, x, subs(op(conditions), -a[2,2]/a[2,1]))
-                end if;
-                proof_intro(f, x, eq, basis, order);
-                if basis[-1] = sing then
-                    printf("\tOn ]%a, +∞[:\n", basis[-1])
-                end if
-            end if;
-            cis := {};
-            for i from 1 to order do
-                if sing <> NULL and basis[-1] = sing then
-                    value := eval(limit((Dx@@(i-1))(f(eq)), x=subs(op(conditions), -a[2,2]/a[2,1]), right))
-                else
-                    value := eval(subs(x=basis[-1], (Dx@@(i-1))(f(eq))));
-                end if;
+        gdeq := subs(x=_x, y=_y, deq);
+        if assigned(diffeqs_table[gdeq]) then
+            basis := diffeqs_table[gdeq];
+            if type(basis, list) then
                 if proof then
-                    printf("\t(%a ∘ h)^(%d)(%a) = %a\n", f, i-1, basis[-1], value)
-                end if;
-                cis := {op(cis), value - add(l[j]*[op(basis[j][2][i])][2], j=1..order)}
-            end do;
-            coefs := {seq(l[i], i=1..order)};
-            sol := solve(cis, coefs);
-            if sol <> NULL then
-                if proof then
-                    printf("Its coefficients in the basis are %a, hence :\n", sol);
-                end if;
-                eq2 := subs(op(sol), eq);
-                if basis[-1] = sing then
-                    res[eqn] := [``(f)(eq2) = add(subs(op(sol), l[j])*basis[j][1](x), j=1..order), x > basis[-1]];
-                    if proof then
-                        printf("\t%a(%a) = %a when %a > %a\n\n", f, eq, op(res[eqn][1])[2], x, basis[-1])
-                    end if
-                else
-                    res[eqn] := ``(f)(eq2) = add(subs(op(sol), l[j])*basis[j][1](x), j=1..order);
-                    if proof then
-                        printf("\t%a(%a) = %a\n\n", f, eq, op(res[eqn])[2])
-                    end if
-                end if;
-                eqn := eqn + 1
-            end if;
-            if basis[-1] = sing then
-                cis := {};
-                if proof then
-                    printf("\tOn ]-∞, %a[:\n", basis[-1])
-                end if;
-                for i from 1 to order do
-                    if proof then
-                        printf("\t\tlim (%a ∘ h)^(%d)(%a) = %a\n\t%a -> %a, %a < %a\n", f, i-1, eq, eval(limit((Dx@@(i-1))(f(eq)), x=subs(op(conditions), -a[2,2]/a[2,1]), left)), x, basis[-1], x, basis[-1])
+                    if basis[-1] = sing then
+                        printf("The function h = %a ↦ %a has a singularity at %a = %a\n", x, eq, x, subs(op(conditions), -a[2,2]/a[2,1]))
                     end if;
-                    cis := {op(cis), eval(limit((Dx@@(i-1))(f(eq)), x=subs(op(conditions), -a[2,2]/a[2,1]), left)) - add(l[j]*[op(basis[j][2][i])][2], j=1..order)}
+                    proof_intro(f, x, eq, basis, order);
+                    if basis[-1] = sing then
+                        printf("\tOn ]%a, +∞[:\n", basis[-1])
+                    end if
+                end if;
+                cis := {};
+                for i from 1 to order do
+                    if sing <> NULL and basis[-1] = sing then
+                        value := eval(limit((Dx@@(i-1))(f(eq)), x=subs(op(conditions), -a[2,2]/a[2,1]), right))
+                    else
+                        value := eval(subs(x=basis[-1], (Dx@@(i-1))(f(eq))));
+                    end if;
+                    if proof then
+                        printf("\t(%a ∘ h)^(%d)(%a) = %a\n", f, i-1, basis[-1], value)
+                    end if;
+                    cis := {op(cis), value - add(l[j]*[op(basis[j][2][i])][2], j=1..order)}
                 end do;
+                coefs := {seq(l[i], i=1..order)};
+                sol := solve(cis, coefs);
                 if sol <> NULL then
-                    eq2 := subs(op(sol), eq);
-                    res[eqn] := [``(f)(eq2) = add(subs(op(sol), l[j])*basis[j][1](x), j=1..order), x < basis[-1]];
                     if proof then
                         printf("Its coefficients in the basis are %a, hence :\n", sol);
-                        printf("\t%a(%a) = %a when %a < %a\n\n", f, eq, op(res[eqn][1])[2], x, basis[-1])
+                    end if;
+                    eq2 := subs(op(sol), eq);
+                    if basis[-1] = sing then
+                        res[eqn] := [``(f)(eq2) = add(subs(op(sol), l[j])*basis[j][1](x), j=1..order), x > basis[-1]];
+                        if proof then
+                            printf("\t%a(%a) = %a when %a > %a\n\n", f, eq, op(res[eqn][1])[2], x, basis[-1])
+                        end if
+                    else
+                        res[eqn] := ``(f)(eq2) = add(subs(op(sol), l[j])*basis[j][1](x), j=1..order);
+                        if proof then
+                            printf("\t%a(%a) = %a\n\n", f, eq, op(res[eqn])[2])
+                        end if
                     end if;
                     eqn := eqn + 1
+                end if;
+                if basis[-1] = sing then
+                    cis := {};
+                    if proof then
+                        printf("\tOn ]-∞, %a[:\n", basis[-1])
+                    end if;
+                    for i from 1 to order do
+                        if proof then
+                            printf("\t\tlim (%a ∘ h)^(%d)(%a) = %a\n\t%a -> %a, %a < %a\n", f, i-1, eq, eval(limit((Dx@@(i-1))(f(eq)), x=subs(op(conditions), -a[2,2]/a[2,1]), left)), x, basis[-1], x, basis[-1])
+                        end if;
+                        cis := {op(cis), eval(limit((Dx@@(i-1))(f(eq)), x=subs(op(conditions), -a[2,2]/a[2,1]), left)) - add(l[j]*[op(basis[j][2][i])][2], j=1..order)}
+                    end do;
+                    if sol <> NULL then
+                        eq2 := subs(op(sol), eq);
+                        res[eqn] := [``(f)(eq2) = add(subs(op(sol), l[j])*basis[j][1](x), j=1..order), x < basis[-1]];
+                        if proof then
+                            printf("Its coefficients in the basis are %a, hence :\n", sol);
+                            printf("\t%a(%a) = %a when %a < %a\n\n", f, eq, op(res[eqn][1])[2], x, basis[-1])
+                        end if;
+                        eqn := eqn + 1
+                    end if
                 end if
             end if
-        end if
+        else
+
+        end if;
     end do;
     subs(op(values_table), [seq(res[j], j=1..(eqn-1))])
 end proc;
