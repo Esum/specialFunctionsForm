@@ -2,7 +2,7 @@ recseq := module ()
 
     description "Tools for recursive sequences";
 
-    export rscreate, rsdiff, `rseq=rseq`, diffeqtors, rstodiffeq, fpscreate, fpsdiff, fpsradius;
+    export rscreate, rsdiff, `rseq=rseq`, diffeqtors, rstodiffeq;
 
     #rscreate
     # Input:
@@ -220,6 +220,7 @@ derive := module ()
 
     Derive := proc(expr, x, proof:=0)
         local res;
+        print(expr, x);
         if type(expr, ratpoly) then
             # We know how to differentiate a rational fraction
             res := diff(expr, x);
@@ -233,6 +234,12 @@ derive := module ()
             return `+`(seq(`*`(Derive([op(expr)][i], x), seq([op(expr)][j], j in remove(`=`, [seq(j, j=1..nops(expr))], i))), i=1..nops(expr)))
         elif op(0, expr) = `-` then
             return -(Derive(op(expr), x))
+        elif op(0, expr) = `^` then
+            if [op(expr)][2] = -1 then
+                return -(Derive([op(expr)][1], x, proof))/([op(expr)][1]*[op(expr)][1])
+            else
+                return Derive(exp([op(expr)][2] * ln([op(expr)][1])), x, proof)
+            end if
         elif assigned(get_diffeq(op(0, expr))) then
             # the node is a special function that we know
             return Derive(op(expr), x)*subs(_x=op(expr), derive_node(op(0, expr), get_diffeq[op(0, expr)], _y, _x))
