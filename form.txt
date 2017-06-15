@@ -1,14 +1,20 @@
 > dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, cos, [[a, b], [c, d]], [d=1, b=a], true)
 (cos ∘ h) = x ↦ cos(a+x) satisfies the same differential equation as cos
-Which has a basis : [sin, cos]
+Which has a basis of solutions : [sin, cos]
 (cos ∘ h) has the following initial conditions :
 	(cos ∘ h)^(0)(0) = cos(a)
+The sequence u(n) satisfies the recursive relation u(n)+(n+1)*(n+2)*u(n+2) = 0, with initial conditions {u(0) = 1, u(1) = 0}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+(n+1)*(n+2)*u(n+2), with {u(0) = 0, u(1) = -1}.
+The function cos, satisfies `@@`(D,2)(_y)(_x)+_y(_x) with initial conditions [_y(0) = 1, D(_y)(0) = 0]
+Thus its associated sequence is u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
+So its derivative has the sequence u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = -1}
+The sequence of cos' yields the same differential equation as cos, so the derivative is -sin
 	(cos ∘ h)^(1)(0) = -sin(a)
 Its coefficients in the basis are {l[1] = -sin(a), l[2] = cos(a)}, hence :
 	cos(a+x) = -sin(a)*sin(x)+cos(a)*cos(x)
 
 (cos ∘ h) = x ↦ cos(-x+a) satisfies the same differential equation as cos
-Which has a basis : [sin, cos]
+Which has a basis of solutions : [sin, cos]
 (cos ∘ h) has the following initial conditions :
 	(cos ∘ h)^(0)(0) = cos(a)
 	(cos ∘ h)^(1)(0) = sin(a)
@@ -21,15 +27,21 @@ Its coefficients in the basis are {l[1] = sin(a), l[2] = cos(a)}, hence :
 ;
 > dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, sin, [[a, b], [c, d]], [d=1, b=a], true)
 (sin ∘ h) = x ↦ sin(a+x) satisfies the same differential equation as sin
-Which has a basis : [sin, cos]
+Which has a basis of solutions : [sin, cos]
 (sin ∘ h) has the following initial conditions :
 	(sin ∘ h)^(0)(0) = sin(a)
+The sequence u(n) satisfies the recursive relation u(n)+(n+1)*(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+(n+1)*(n+2)*u(n+2), with {u(0) = 1, u(1) = 0}.
+The function sin, satisfies `@@`(D,2)(_y)(_x)+_y(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
+Thus its associated sequence is u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
+So its derivative has the sequence u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
+The sequence of sin' yields the same differential equation as sin, so the derivative is cos
 	(sin ∘ h)^(1)(0) = cos(a)
 Its coefficients in the basis are {l[1] = cos(a), l[2] = sin(a)}, hence :
 	sin(a+x) = cos(a)*sin(x)+sin(a)*cos(x)
 
 (sin ∘ h) = x ↦ sin(-x+a) satisfies the same differential equation as sin
-Which has a basis : [sin, cos]
+Which has a basis of solutions : [sin, cos]
 (sin ∘ h) has the following initial conditions :
 	(sin ∘ h)^(0)(0) = sin(a)
 	(sin ∘ h)^(1)(0) = -cos(a)
@@ -43,15 +55,15 @@ Its coefficients in the basis are {l[1] = -cos(a), l[2] = sin(a)}, hence :
 > dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [b=1, d=0, c=1], true)
 The function h = x ↦ -1/x has a singularity at x = 0
 (arctan ∘ h) = x ↦ arctan(-1/x) satisfies the same differential equation as arctan
-Which has a basis : [arctan, x -> 1]
+Which has a basis of solutions : [arctan, x -> 1]
 (arctan ∘ h) has the following initial conditions :
-	Sur ]0, +∞[:
+	On ]0, +∞[:
 	(arctan ∘ h)^(0)(0) = -1/2*Pi
 	(arctan ∘ h)^(1)(0) = 1
 Its coefficients in the basis are {l[1] = 1, l[2] = -1/2*Pi}, hence :
 	arctan(-1/x) = arctan(x)-1/2*Pi when x > 0
 
-	Sur ]-∞, 0[:
+	On ]-∞, 0[:
 		lim (arctan ∘ h)^(0)(-1/x) = 1/2*Pi
 	x -> 0, x < 0
 		lim (arctan ∘ h)^(1)(-1/x) = 1
@@ -61,15 +73,22 @@ Its coefficients in the basis are {l[1] = 1, l[2] = -1/2*Pi}, hence :
 
 The function h = x ↦ 1/x has a singularity at x = 0
 (arctan ∘ h) = x ↦ arctan(1/x) satisfies the same differential equation as arctan
-Which has a basis : [arctan, x -> 1]
+Which has a basis of solutions : [arctan, x -> 1]
 (arctan ∘ h) has the following initial conditions :
-	Sur ]0, +∞[:
+	On ]0, +∞[:
 	(arctan ∘ h)^(0)(0) = 1/2*Pi
+The sequence u(n) satisfies the recursive relation n*u(n)+(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+u(n+2), with {u(0) = 1, u(1) = 0}.
+The function arctan, satisfies (_x^2+1)*`@@`(D,2)(_y)(_x)+2*_x*D(_y)(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
+Thus its associated sequence is n*u(n)+(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
+So its derivative has the sequence u(n)+u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
+The differential equation associated to the sequence of arctan' is of order 0
+So arctan'(_x) = 1/(_x^2+1)
 	(arctan ∘ h)^(1)(0) = -1
 Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
 	arctan(1/x) = -arctan(x)+1/2*Pi when x > 0
 
-	Sur ]-∞, 0[:
+	On ]-∞, 0[:
 		lim (arctan ∘ h)^(0)(1/x) = -1/2*Pi
 	x -> 0, x < 0
 		lim (arctan ∘ h)^(1)(1/x) = -1
@@ -95,15 +114,22 @@ Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
 ;
 > dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [d=1, c=0], true)
 (arctan ∘ h) = x ↦ arctan(x) satisfies the same differential equation as arctan
-Which has a basis : [arctan, x -> 1]
+Which has a basis of solutions : [arctan, x -> 1]
 (arctan ∘ h) has the following initial conditions :
 	(arctan ∘ h)^(0)(0) = 0
+The sequence u(n) satisfies the recursive relation n*u(n)+(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+u(n+2), with {u(0) = 1, u(1) = 0}.
+The function arctan, satisfies (_x^2+1)*`@@`(D,2)(_y)(_x)+2*_x*D(_y)(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
+Thus its associated sequence is n*u(n)+(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
+So its derivative has the sequence u(n)+u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
+The differential equation associated to the sequence of arctan' is of order 0
+So arctan'(_x) = 1/(_x^2+1)
 	(arctan ∘ h)^(1)(0) = 1
 Its coefficients in the basis are {l[1] = 1, l[2] = 0}, hence :
 	arctan(x) = arctan(x)
 
 (arctan ∘ h) = x ↦ arctan(-x) satisfies the same differential equation as arctan
-Which has a basis : [arctan, x -> 1]
+Which has a basis of solutions : [arctan, x -> 1]
 (arctan ∘ h) has the following initial conditions :
 	(arctan ∘ h)^(0)(0) = 0
 	(arctan ∘ h)^(1)(0) = -1
@@ -114,7 +140,7 @@ Its coefficients in the basis are {l[1] = -1, l[2] = 0}, hence :
 ;
 > dsolve_symmetries(D(y)(x) - y(x), y, x, exp, [[a, b], [c, d]], [b=a, d=1], true)
 (exp ∘ h) = x ↦ exp(a+x) satisfies the same differential equation as exp
-Which has a basis : [exp]
+Which has a basis of solutions : [exp]
 (exp ∘ h) has the following initial conditions :
 	(exp ∘ h)^(0)(0) = exp(a)
 Its coefficients in the basis are {l[1] = exp(a)}, hence :
@@ -122,45 +148,48 @@ Its coefficients in the basis are {l[1] = exp(a)}, hence :
 
                  [(exp)(a + x) = exp(a) exp(x)]
 ;
-> dsolve_symmetries(x*(D@@2)(y)(x) + D(y)(x), y, x, ln, [[a, b], [c, d]], [b=a, d=1, c=1], true)
-(ln ∘ h) = x ↦ ln(a*x) satisfies the same differential equation as ln
-Which has a basis : [ln, x -> 1]
-(ln ∘ h) has the following initial conditions :
-	(ln ∘ h)^(0)(1) = ln(a)
-	(ln ∘ h)^(1)(1) = 1
-Its coefficients in the basis are {l[1] = 1, l[2] = ln(a)}, hence :
-	ln(a*x) = ln(x)+ln(a)
+> dsolve_symmetries((x+1)*(D@@2)(y)(x) + D(y)(x), y, x, lnp1, [[a, b], [c, d]], [b=a, d=1, c=1], true)
+(lnp1 ∘ h) = x ↦ lnp1(a*x+a-1) satisfies the same differential equation as lnp1
+Which has a basis of solutions : [lnp1, x -> 1]
+(lnp1 ∘ h) has the following initial conditions :
+	(lnp1 ∘ h)^(0)(0) = lnp1(-1+a)
+The sequence u(n) satisfies the recursive relation (n+1)*u(n+1)+(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+u(n+1), with {u(0) = 1, u(1) = -1}.
+The function lnp1, satisfies (1+_x)*`@@`(D,2)(_y)(_x)+D(_y)(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
+Thus its associated sequence is (n+1)*u(n+1)+(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
+So its derivative has the sequence u(n)+u(n+1) = 0 with initial conditions {u(0) = 1, u(1) = -1}
+The differential equation associated to the sequence of lnp1' is of order 0
+So lnp1'(_x) = 1/(1+_x)
+	(lnp1 ∘ h)^(1)(0) = 1
+Its coefficients in the basis are {l[1] = 1, l[2] = lnp1(-1+a)}, hence :
+	lnp1(a*x+a-1) = lnp1(x)+lnp1(-1+a)
 
-(ln ∘ h) = x ↦ ln(a/x) satisfies the same differential equation as ln
-Which has a basis : [ln, x -> 1]
-(ln ∘ h) has the following initial conditions :
-	(ln ∘ h)^(0)(1) = ln(a)
-	(ln ∘ h)^(1)(1) = -1
-Its coefficients in the basis are {l[1] = -1, l[2] = ln(a)}, hence :
-	ln(a/x) = -ln(x)+ln(a)
+(lnp1 ∘ h) = x ↦ lnp1(-1/(x+1)*x+1/(x+1)*a) satisfies the same differential equation as lnp1
+Which has a basis of solutions : [lnp1, x -> 1]
+(lnp1 ∘ h) has the following initial conditions :
+	(lnp1 ∘ h)^(0)(0) = lnp1(a)
+	(lnp1 ∘ h)^(1)(0) = (-a-1)/(1+a)
+Its coefficients in the basis are {l[1] = -1, l[2] = lnp1(a)}, hence :
+	lnp1(-1/(x+1)*x+1/(x+1)*a) = -lnp1(x)+lnp1(a)
 
-     [                               /a\                 ]
-     [(ln)(a x) = ln(x) + ln(a), (ln)|-| = -ln(x) + ln(a)]
-     [                               \x/                 ]
+        [                                              
+        [(lnp1)(a x + a - 1) = lnp1(x) + lnp1(-1 + a), 
+        [                                              
+
+                /    x       a  \                     ]
+          (lnp1)|- ----- + -----| = -lnp1(x) + lnp1(a)]
+                \  x + 1   x + 1/                     ]
 ;
 > dsolve_symmetries((D@@2)(y)(x) - y(x), y, x, sinh, [[a, b], [c, d]], [b=a, d=1], true)
 (sinh ∘ h) = x ↦ sinh(a+x) satisfies the same differential equation as sinh
-Which has a basis : [sinh, cosh]
+Which has a basis of solutions : [sinh, cosh]
 (sinh ∘ h) has the following initial conditions :
 	(sinh ∘ h)^(0)(0) = sinh(a)
-	(sinh ∘ h)^(1)(0) = cosh(a)
-Its coefficients in the basis are {l[1] = cosh(a), l[2] = sinh(a)}, hence :
-	sinh(a+x) = cosh(a)*sinh(x)+sinh(a)*cosh(x)
-
+	(sinh ∘ h)^(1)(0) = _x = a
 (sinh ∘ h) = x ↦ sinh(-x+a) satisfies the same differential equation as sinh
-Which has a basis : [sinh, cosh]
+Which has a basis of solutions : [sinh, cosh]
 (sinh ∘ h) has the following initial conditions :
 	(sinh ∘ h)^(0)(0) = sinh(a)
-	(sinh ∘ h)^(1)(0) = -cosh(a)
-Its coefficients in the basis are {l[1] = -cosh(a), l[2] = sinh(a)}, hence :
-	sinh(-x+a) = -cosh(a)*sinh(x)+sinh(a)*cosh(x)
-
-     [(sinh)(a + x) = cosh(a) sinh(x) + sinh(a) cosh(x), 
-
-       (sinh)(-x + a) = -cosh(a) sinh(x) + sinh(a) cosh(x)]
+	(sinh ∘ h)^(1)(0) = -_x = -a
+                               []
 ;
