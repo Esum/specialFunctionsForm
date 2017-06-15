@@ -21,12 +21,15 @@ recseq := module ()
     #  rs: a recursive sequence u(n) from rscreate
     # Output: the recursive sequence associated to u(n), i.e. (n+1) * u(n+1)
     #
-    rsdiff := proc(rs)
+    rsdiff := proc(rs, proof:=0)
         local rs_op, u, n, cis, i, diffcis, max_order, orders, common_factors;
         u := rs[2];
         n := rs[3];
         rs_op := [op(rs[1])];
         cis := rs[4];
+        if proof > 0 then
+            printf("The sequence %a satisfies the recursive relation %a = 0, with initial conditions %a\n", u(n), rs[1], cis)
+        end if;
         # orders is the list of the i such that u(n+i) appears in rs
         if op(0, rs_op) = u then
             orders := [op(rs_op)-n]
@@ -71,6 +74,9 @@ recseq := module ()
                 diffcis := diffcis union {u(op(op(i)[1])-1)=(op(op(i)[1]))*op(i)[2]}
             end if
         end do;
+        if proof > 0 then
+            printf("Thus the sequence of the derivative %a satisfies %a, with %a.\n", (n+1)*u(n+1), `+`(op(rs_op)), diffcis)
+        end if;
         rscreate(`+`(op(rs_op)), u, n, diffcis)
     end proc;
 
@@ -165,9 +171,9 @@ diffeqs_table[(D@@2)(_y)(_x) + 2*_x*D(_y)(_x)] := [
     0];
 
 diffeqs_table[(_x+1)*(D@@2)(_y)(_x) + (D)(_y)(_x)] := [
-    [ln, [_y(0)=0, D(_y)(0)=1]],
+    [lnp1, [_y(0)=0, D(_y)(0)=1]],
     [proc (x) options operator, arrow; 1 end proc, [_y(0)=1, D(_y)(0)=0]],
-    1];
+    0];
 
 
 derive := module ()
@@ -176,16 +182,34 @@ derive := module ()
 
     export Derive;
 
-    local derive_node, get_diffeq;
+    local derive_node, get_diffeq, get_derivative;
 
+    #get_diffeq
+    #  Essentially a inverse of diffeq_table
+    #
     get_diffeq[sin] := (D@@2)(_y)(_x) + _y(_x);
     get_diffeq[cos] := (D@@2)(_y)(_x) + _y(_x);
+    get_diffeq[sinh] := (D@@2)(_y)(_x) - _y(_x);
+    get_diffeq[cosh] := (D@@2)(_y)(_x) - _y(_x);
     get_diffeq[exp] := (D)(_y)(_x) - _y(_x);
-    get_diffeq[ln] := (_x+1)*(D@@2)(_y)(_x) + (D)(_y)(_x);
+    get_diffeq[lnp1] := (_x+1)*(D@@2)(_y)(_x) + (D)(_y)(_x);
     get_diffeq[arctan] := (_x^2 + 1)*(D@@2)(_y)(_x) + 2*_x*(D)(_y)(_x);
 
-    derive_node := proc(f, deq, y, x, proof:=false)
+    #derive_node
+    # Input:
+    #  f: a function
+    #  deq: a differential equation satisfied by f
+    #  y: the function variable of deq
+    #  x: the variable of deq
+    #  proof(=0): print a proof of the derivation
+    #  remember(=false): remember the derivative for the next call with f
+    # Output: The derivative of f at point x
+    #
+    derive_node := proc(f, deq, y, x, proof:=0, remember:=false)
         local gdeq, ddeq, rs, df, cis, basis, in_basis, i, sys;
+        if assigned(get_derivative[f]) then
+            return get_derivative[f](x)
+        end if;
         gdeq := subs(x=_x, y=_y, deq);
         if assigned(diffeqs_table[gdeq]) then
             basis := diffeqs_table[gdeq][1..-2];
@@ -193,7 +217,12 @@ derive := module ()
             in_basis := 0;
             for i from 1 to nops(basis) do
                 if f = basis[i][1] then
-                    df := recseq[rsdiff](rs[i]);
+                    df := recseq[rsdiff](rs[i], proof);
+                    if proof > 0 then
+                        printf("The function %a, satisfies %a with initial conditions %a\n", f, deq, basis[i][2]);
+                        printf("Thus its associated sequence is %a = 0 with initial conditions %a\n", rs[i][1], rs[i][4]);
+                        printf("So its derivative has the sequence %a = 0 with initial conditions %a\n", df[1], df[4])
+                    end if;
                     if df[1] = rs[1][1] then
                         in_basis := i
                     end if
@@ -207,23 +236,46 @@ derive := module ()
                 end do;
                 # do a gaussian elimination to find the coefficients in the basis
                 cis := solve(cis, {seq(l[j], j=1..nops(basis))});
-                return subs(op(cis), add(l[j] * basis[j][1] , j=1..nops(basis)))(x)
+                df := subs(op(cis), add(l[j] * basis[j][1] , j=1..nops(basis)));
+                if proof > 0 then
+                    printf("The sequence of %a' yields the same differential equation as %a, so the derivative is %a\n", f, f, df)
+                end if;
+                if remember then
+                    get_derivative[f] := df
+                end if;
+                return df(x)
             else
                 ddeq := recseq[rstodiffeq](df, y(x));
                 if PDETools[difforder](ddeq, y(x)) = 0 then
                     # the value of y(x) can be computed directly by isolating y(x) in the equation
-                    return subs(x=x-diffeqs_table[gdeq][-1], solve(ddeq, y(x)))
+                    df := subs(x=x-diffeqs_table[gdeq][-1], solve(ddeq, y(x)));
+                    if proof > 0 then
+                        printf("The differential equation associated to the sequence of %a' is of order 0\n", f);
+                        printf("So %a'(%a) = %a\n", f, x, df)
+                    end if;
+                    if remember then
+                        get_derivative[f] := proc (_) options operator, arrow; subs(x=_, df) end proc
+                    end if;
+                    return df
                 end if
             end if
         end if;
     end proc;
 
-    Derive := proc(expr, x, proof:=0)
+    #Derive
+    # Input:
+    #  expr: the expression to derive
+    #  x: the variable of the function
+    #  proof(=0): print a proof of the derivation
+    #  remember(=false): remember special functions derivatives
+    # Output: the derivative d/dx(expr)
+    #
+    Derive := proc(expr, x, proof:=0, remember:=false)
         local res;
         if type(expr, ratpoly) then
             # We know how to differentiate a rational fraction
             res := diff(expr, x);
-            if proof > 0 then
+            if proof > 1 then
                 printf("%a is rational fraction in %a, thus its derivative is: %a\n", expr, x, res)
             end if;
             return res
@@ -241,7 +293,7 @@ derive := module ()
             end if
         elif assigned(get_diffeq(op(0, expr))) then
             # the node is a special function that we know
-            return Derive(op(expr), x)*subs(_x=op(expr), derive_node(op(0, expr), get_diffeq[op(0, expr)], _y, _x))
+            return Derive(op(expr), x)*subs(_x=op(expr), derive_node(op(0, expr), get_diffeq[op(0, expr)], _y, _x, proof, remember))
         end if;
     end proc;
 
@@ -319,7 +371,7 @@ end proc;
 dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
     local order, eq, gdeq, sing, eq2, cis, i, value, Dx, res, basis, sol, coefs, eqn;
     order := PDETools[difforder](deq);
-    Dx := proc (_) options operator, arrow; derive[Derive](_, x) end proc;
+    Dx := proc (_) options operator, arrow; derive[Derive](_, x, 1, true) end proc;
     eqn := 1;
     for eq in symmetric_diffeqs(deq, y, x, a) do
         eq := subs(op(conditions), eq);
@@ -394,8 +446,9 @@ dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
                     end if
                 end if
             end if
-        else
-
+        elif type(f, list) then
+            basis := [op(recseq[rstodiffeq](f))][2..];
+            value := eval(limit((Dx@@(i-1))(f(eq)), x=subs(op(conditions), -a[2,2]/a[2,1]), right))
         end if;
     end do;
     subs(op(values_table), [seq(res[j], j=1..(eqn-1))])
