@@ -516,7 +516,7 @@ hypergeom_symmetries := proc(a, b, c, h)
     eqn := 1;
     deq := _z*(1-_z)*(D@@2)(_y)(_z) + (c - (a + b + 1)*_z)*D(_y)(_z) - a*b*_y(_z);
     deq2 := DETools[de2diffop](_z*(1-_z)*(D@@2)(_y)(_z) + (w - (u + v + 1)*_z)*D(_y)(_z) - u*v*_y(_z), _y(_z), [D_z, _z]);
-    deq_polypow := {(d[1]*_z+d[2])*D(_y)(_z) - d[1]*d[3]*_y(_z), _y(0) = d[2]^d[3]};
+    deq_polypow := (d[1]*_z+d[2])*D(_y)(_z) - d[1]*d[3]*_y(_z);
     if h[1,1] <> 0 then
         print("h[1,1] must be null");
         return NULL
@@ -536,7 +536,7 @@ hypergeom_symmetries := proc(a, b, c, h)
         for cond1 in [solve(sys, {a, b, c, d[1], d[2], d[3]})] do
             deq_sym2 := subs(op(cond1), deq_sym1);
             deq_sym2 := PolynomialTools[FromCoefficientList](map(quo, PolynomialTools[CoefficientList](deq_sym2, D_z), facto, _z), D_z);
-            sys := {op(map(coeffs, [coeffs(deq_sym2-deq2, D_z)], _z))} union {subs(op(cond1), op(2, cis[1]) - 1), subs(op(cond1), op(2, cis[1])*u*v/w - op(2, cis[2]))};
+            sys := {op(map(coeffs, [coeffs(deq_sym2-deq2, D_z)], _z))} union {subs(op(cond0), op(cond1), op(2, cis[1]) - 1), subs(op(cond0), op(cond1), op(2, cis[1])*u*v/w - op(2, cis[2]))};
             for cond2 in [solve(sys, {u, v, w, d[1], d[2], d[3]})] do
                 valid := true;
                 for sol in cond2 do
@@ -545,7 +545,7 @@ hypergeom_symmetries := proc(a, b, c, h)
                     end if
                 end do;
                 if valid then
-                    res[eqn] := subs(op(select(proc (_) options operator, arrow; op(1, _) in {a, b, c} end proc, [op(cond1)])), F[2,1](a, b, c, hf)) = subs(op(map(proc (_) options operator, arrow; subsop(2=subs(op(cond1), op(2, _)), _) end proc, [op(cond2)])), (d[1]*_z + d[2])^(d[3]) * F[2,1](u, v, w, _z));
+                    res[eqn] := subs(op(cond1), op(cond2), (d[1]*_z + d[2])^d[3] * F[2,1](a, b, c, hf)) = subs(op(map(proc (_) options operator, arrow; subsop(2=subs(op(cond1), op(2, _)), _) end proc, [op(cond2)])), F[2,1](u, v, w, _z));
                     eqn := eqn + 1
                 end if
             end do
