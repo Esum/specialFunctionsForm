@@ -3,11 +3,10 @@
 Which has a basis of solutions : [sin, cos]
 (cos ∘ h) has the following initial conditions :
 	(cos ∘ h)^(0)(0) = cos(a)
-The sequence u(n) satisfies the recursive relation u(n)+(n+1)*(n+2)*u(n+2) = 0, with initial conditions {u(0) = 1, u(1) = 0}
-Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+(n+1)*(n+2)*u(n+2), with {u(0) = 0, u(1) = -1}.
 The function cos, satisfies `@@`(D,2)(_y)(_x)+_y(_x) with initial conditions [_y(0) = 1, D(_y)(0) = 0]
 Thus its associated sequence is u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
-So its derivative has the sequence u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = -1}
+The sequence u(n) satisfies the recursive relation u(n)+(n+1)*(n+2)*u(n+2) = 0, with initial conditions {u(0) = 1, u(1) = 0}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+(n+1)*(n+2)*u(n+2), with {u(0) = 0, u(1) = -1}.
 The sequence of cos' yields the same differential equation as cos, so the derivative is -sin
 	(cos ∘ h)^(1)(0) = -sin(a)
 Its coefficients in the basis are {l[1] = -sin(a), l[2] = cos(a)}, hence :
@@ -30,11 +29,10 @@ Its coefficients in the basis are {l[1] = sin(a), l[2] = cos(a)}, hence :
 Which has a basis of solutions : [sin, cos]
 (sin ∘ h) has the following initial conditions :
 	(sin ∘ h)^(0)(0) = sin(a)
-The sequence u(n) satisfies the recursive relation u(n)+(n+1)*(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
-Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+(n+1)*(n+2)*u(n+2), with {u(0) = 1, u(1) = 0}.
 The function sin, satisfies `@@`(D,2)(_y)(_x)+_y(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
 Thus its associated sequence is u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
-So its derivative has the sequence u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
+The sequence u(n) satisfies the recursive relation u(n)+(n+1)*(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+(n+1)*(n+2)*u(n+2), with {u(0) = 1, u(1) = 0}.
 The sequence of sin' yields the same differential equation as sin, so the derivative is cos
 	(sin ∘ h)^(1)(0) = cos(a)
 Its coefficients in the basis are {l[1] = cos(a), l[2] = sin(a)}, hence :
@@ -77,12 +75,11 @@ Which has a basis of solutions : [arctan, x -> 1]
 (arctan ∘ h) has the following initial conditions :
 	On ]0, +∞[:
 	(arctan ∘ h)^(0)(0) = 1/2*Pi
-The sequence u(n) satisfies the recursive relation n*u(n)+(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
-Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+u(n+2), with {u(0) = 1, u(1) = 0}.
 The function arctan, satisfies (_x^2+1)*`@@`(D,2)(_y)(_x)+2*_x*D(_y)(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
 Thus its associated sequence is n*u(n)+(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
-So its derivative has the sequence u(n)+u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
-The differential equation associated to the sequence of arctan' is of order 0
+The sequence u(n) satisfies the recursive relation n*u(n)+(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+u(n+2), with {u(0) = 1, u(1) = 0}.
+The differential equation (_x^2+1)*_y(_x)-1 associated to the sequence of arctan' is of order 0
 So arctan'(_x) = 1/(_x^2+1)
 	(arctan ∘ h)^(1)(0) = -1
 Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
@@ -117,13 +114,6 @@ Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
 Which has a basis of solutions : [arctan, x -> 1]
 (arctan ∘ h) has the following initial conditions :
 	(arctan ∘ h)^(0)(0) = 0
-The sequence u(n) satisfies the recursive relation n*u(n)+(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
-Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+u(n+2), with {u(0) = 1, u(1) = 0}.
-The function arctan, satisfies (_x^2+1)*`@@`(D,2)(_y)(_x)+2*_x*D(_y)(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
-Thus its associated sequence is n*u(n)+(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
-So its derivative has the sequence u(n)+u(n+2) = 0 with initial conditions {u(0) = 1, u(1) = 0}
-The differential equation associated to the sequence of arctan' is of order 0
-So arctan'(_x) = 1/(_x^2+1)
 	(arctan ∘ h)^(1)(0) = 1
 Its coefficients in the basis are {l[1] = 1, l[2] = 0}, hence :
 	arctan(x) = arctan(x)
@@ -148,48 +138,279 @@ Its coefficients in the basis are {l[1] = exp(a)}, hence :
 
                  [(exp)(a + x) = exp(a) exp(x)]
 ;
-> dsolve_symmetries((x+1)*(D@@2)(y)(x) + D(y)(x), y, x, lnp1, [[a, b], [c, d]], [b=a, d=1, c=1], true)
-(lnp1 ∘ h) = x ↦ lnp1(a*x+a-1) satisfies the same differential equation as lnp1
-Which has a basis of solutions : [lnp1, x -> 1]
-(lnp1 ∘ h) has the following initial conditions :
-	(lnp1 ∘ h)^(0)(0) = lnp1(-1+a)
+> dsolve_symmetries(x*(D@@2)(y)(x) + D(y)(x), y, x, ln, [[a, b], [c, d]], [b=a, d=1, c=1], true)
+(ln ∘ h) = x ↦ ln(a*x) satisfies the same differential equation as ln
+Which has a basis of solutions : [ln, x -> 1]
+(ln ∘ h) has the following initial conditions :
+	(ln ∘ h)^(0)(1) = ln(a)
+The function ln, satisfies _x*`@@`(D,2)(_y)(_x)+D(_y)(_x) with initial conditions [_y(1) = 0, D(_y)(1) = 1]
+Thus its associated sequence is (n+1)*u(n+1)+(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
 The sequence u(n) satisfies the recursive relation (n+1)*u(n+1)+(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
 Thus the sequence of the derivative (n+1)*u(n+1) satisfies u(n)+u(n+1), with {u(0) = 1, u(1) = -1}.
-The function lnp1, satisfies (1+_x)*`@@`(D,2)(_y)(_x)+D(_y)(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
-Thus its associated sequence is (n+1)*u(n+1)+(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
-So its derivative has the sequence u(n)+u(n+1) = 0 with initial conditions {u(0) = 1, u(1) = -1}
-The differential equation associated to the sequence of lnp1' is of order 0
-So lnp1'(_x) = 1/(1+_x)
-	(lnp1 ∘ h)^(1)(0) = 1
-Its coefficients in the basis are {l[1] = 1, l[2] = lnp1(-1+a)}, hence :
-	lnp1(a*x+a-1) = lnp1(x)+lnp1(-1+a)
+The differential equation (_x+1)*_y(_x)-1 associated to the sequence of ln' is of order 0
+So ln'(_x) = 1/_x
+	(ln ∘ h)^(1)(1) = 1
+Its coefficients in the basis are {l[1] = 1, l[2] = ln(a)}, hence :
+	ln(a*x) = ln(x)+ln(a)
 
-(lnp1 ∘ h) = x ↦ lnp1(-1/(x+1)*x+1/(x+1)*a) satisfies the same differential equation as lnp1
-Which has a basis of solutions : [lnp1, x -> 1]
-(lnp1 ∘ h) has the following initial conditions :
-	(lnp1 ∘ h)^(0)(0) = lnp1(a)
-	(lnp1 ∘ h)^(1)(0) = (-a-1)/(1+a)
-Its coefficients in the basis are {l[1] = -1, l[2] = lnp1(a)}, hence :
-	lnp1(-1/(x+1)*x+1/(x+1)*a) = -lnp1(x)+lnp1(a)
+(ln ∘ h) = x ↦ ln(a/x) satisfies the same differential equation as ln
+Which has a basis of solutions : [ln, x -> 1]
+(ln ∘ h) has the following initial conditions :
+	(ln ∘ h)^(0)(1) = ln(a)
+	(ln ∘ h)^(1)(1) = -1
+Its coefficients in the basis are {l[1] = -1, l[2] = ln(a)}, hence :
+	ln(a/x) = -ln(x)+ln(a)
 
-        [                                              
-        [(lnp1)(a x + a - 1) = lnp1(x) + lnp1(-1 + a), 
-        [                                              
-
-                /    x       a  \                     ]
-          (lnp1)|- ----- + -----| = -lnp1(x) + lnp1(a)]
-                \  x + 1   x + 1/                     ]
+     [                               /a\                 ]
+     [(ln)(a x) = ln(x) + ln(a), (ln)|-| = -ln(x) + ln(a)]
+     [                               \x/                 ]
 ;
 > dsolve_symmetries((D@@2)(y)(x) - y(x), y, x, sinh, [[a, b], [c, d]], [b=a, d=1], true)
 (sinh ∘ h) = x ↦ sinh(a+x) satisfies the same differential equation as sinh
 Which has a basis of solutions : [sinh, cosh]
 (sinh ∘ h) has the following initial conditions :
 	(sinh ∘ h)^(0)(0) = sinh(a)
-	(sinh ∘ h)^(1)(0) = _x = a
+The function sinh, satisfies `@@`(D,2)(_y)(_x)-_y(_x) with initial conditions [_y(0) = 0, D(_y)(0) = 1]
+Thus its associated sequence is -u(n)+(n+1)*(n+2)*u(n+2) = 0 with initial conditions {u(0) = 0, u(1) = 1}
+The sequence u(n) satisfies the recursive relation -u(n)+(n+1)*(n+2)*u(n+2) = 0, with initial conditions {u(0) = 0, u(1) = 1}
+Thus the sequence of the derivative (n+1)*u(n+1) satisfies -u(n)+(n+1)*(n+2)*u(n+2), with {u(0) = 1, u(1) = 0}.
+The sequence of sinh' yields the same differential equation as sinh, so the derivative is cosh
+	(sinh ∘ h)^(1)(0) = cosh(a)
+Its coefficients in the basis are {l[1] = cosh(a), l[2] = sinh(a)}, hence :
+	sinh(a+x) = cosh(a)*sinh(x)+sinh(a)*cosh(x)
+
 (sinh ∘ h) = x ↦ sinh(-x+a) satisfies the same differential equation as sinh
 Which has a basis of solutions : [sinh, cosh]
 (sinh ∘ h) has the following initial conditions :
 	(sinh ∘ h)^(0)(0) = sinh(a)
-	(sinh ∘ h)^(1)(0) = -_x = -a
-                               []
+	(sinh ∘ h)^(1)(0) = -cosh(a)
+Its coefficients in the basis are {l[1] = -cosh(a), l[2] = sinh(a)}, hence :
+	sinh(-x+a) = -cosh(a)*sinh(x)+sinh(a)*cosh(x)
+
+     [(sinh)(a + x) = cosh(a) sinh(x) + sinh(a) cosh(x), 
+
+       (sinh)(-x + a) = -cosh(a) sinh(x) + sinh(a) cosh(x)]
+;
+
+> hypergeom_symmetries(a, b, c, [[0, -4, 4], [1, -4, 4]]);
+[       /               2         \                               
+[       |1          4 _z  - 4 _z  |                               
+[F[2, 1]|-, 0, c, ----------------| = F[2, 1](0, 2 c - 1, c, _z), 
+[       |2            2           |                               
+[       \         4 _z  - 4 _z + 1/                               
+
+         /               2         \                               
+         |1          4 _z  - 4 _z  |                               
+  F[2, 1]|-, 0, c, ----------------| = F[2, 1](2 c - 1, 0, c, _z), 
+         |2            2           |                               
+         \         4 _z  - 4 _z + 1/                               
+
+         /               2         \                               
+         |   1       4 _z  - 4 _z  |                               
+  F[2, 1]|0, -, c, ----------------| = F[2, 1](0, 2 c - 1, c, _z), 
+         |   2         2           |                               
+         \         4 _z  - 4 _z + 1/                               
+
+         /               2         \                               
+         |   1       4 _z  - 4 _z  |                               
+  F[2, 1]|0, -, c, ----------------| = F[2, 1](2 c - 1, 0, c, _z), 
+         |   2         2           |                               
+         \         4 _z  - 4 _z + 1/                               
+
+         /                   2         \                     
+         |    1          4 _z  - 4 _z  |              (-2 b) 
+  F[2, 1]|b + -, b, c, ----------------| = (-2 _z + 1)       
+         |    2            2           |                     
+         \             4 _z  - 4 _z + 1/                     
+
+                                              /             
+                                              |    1        
+  F[2, 1](-2 b + 2 c - 1, 2 b, c, _z), F[2, 1]|b + -, b, c, 
+                                              |    2        
+                                              \             
+
+        2         \                                  
+    4 _z  - 4 _z  |              (-2 b)              
+  ----------------| = (-2 _z + 1)       F[2, 1](2 b, 
+      2           |                                  
+  4 _z  - 4 _z + 1/                                  
+
+                                 /                   2         \   
+                                 |    1          4 _z  - 4 _z  |   
+  -2 b + 2 c - 1, c, _z), F[2, 1]|b - -, b, c, ----------------| = 
+                                 |    2            2           |   
+                                 \             4 _z  - 4 _z + 1/   
+
+             (-2 b + 1)                                      
+  (-2 _z + 1)           F[2, 1](-2 b + 2 c, 2 b - 1, c, _z), 
+
+         /                   2         \                         
+         |    1          4 _z  - 4 _z  |              (-2 b + 1) 
+  F[2, 1]|b - -, b, c, ----------------| = (-2 _z + 1)           
+         |    2            2           |                         
+         \             4 _z  - 4 _z + 1/                         
+
+  F[2, 1](2 b - 1, -2 b + 2 c, c, _z), 
+
+         /                      2         \                         
+         |1                 4 _z  - 4 _z  |                         
+  F[2, 1]|-, 0, d[3] + 1, ----------------| = F[2, 1](1, 0, 1, _z), 
+         |2                   2           |                         
+         \                4 _z  - 4 _z + 1/                         
+
+         /                      2         \                         
+         |1                 4 _z  - 4 _z  |                         
+  F[2, 1]|-, 0, d[3] + 1, ----------------| = F[2, 1](0, 1, 1, _z), 
+         |2                   2           |                         
+         \                4 _z  - 4 _z + 1/                         
+
+         /                      2         \                         
+         |   1              4 _z  - 4 _z  |                         
+  F[2, 1]|0, -, d[3] + 1, ----------------| = F[2, 1](1, 0, 1, _z), 
+         |   2                2           |                         
+         \                4 _z  - 4 _z + 1/                         
+
+         /                      2         \                       
+         |   1              4 _z  - 4 _z  |                       
+  F[2, 1]|0, -, d[3] + 1, ----------------| = F[2, 1](0, 1, 1, _z)
+         |   2                2           |                       
+         \                4 _z  - 4 _z + 1/                       
+
+  ]
+  ]
+  ]
+  ]
+  ]
+;
+> hypergeom_symmetries(a, b, c, [[0, 0, 1], [-4, 4, 0]])
+[       /                  2   \                           
+[       |          1     _z    |                           
+[F[2, 1]|0, b, b + -, ---------| = F[2, 1](0, b, 2 b, _z), 
+[       \          2  -4 + 4 _z/                           
+
+         /                  2   \                           
+         |          1     _z    |                           
+  F[2, 1]|0, b, b + -, ---------| = F[2, 1](b, 0, 2 b, _z), 
+         \          2  -4 + 4 _z/                           
+
+         /                  2   \                           
+         |          1     _z    |                           
+  F[2, 1]|a, 0, a + -, ---------| = F[2, 1](0, a, 2 a, _z), 
+         \          2  -4 + 4 _z/                           
+
+         /                  2   \                           
+         |          1     _z    |                           
+  F[2, 1]|a, 0, a + -, ---------| = F[2, 1](a, 0, 2 a, _z), 
+         \          2  -4 + 4 _z/                           
+
+         /                      2   \                        
+         |              1     _z    |           (-b)         
+  F[2, 1]|a, b, a + b + -, ---------| = (1 - _z)     F[2, 1](
+         \              2  -4 + 4 _z/                        
+
+                                     /                      2   \   
+                                     |              1     _z    |   
+  a + b, 2 b, 2 a + 2 b, _z), F[2, 1]|a, b, a + b + -, ---------| = 
+                                     \              2  -4 + 4 _z/   
+
+                                                          /      
+          (-b)                                            |      
+  (1 - _z)     F[2, 1](2 b, a + b, 2 a + 2 b, _z), F[2, 1]|a, b, 
+                                                          \      
+
+                  2   \                                    
+          1     _z    |           (-a)                     
+  a + b + -, ---------| = (1 - _z)     F[2, 1](a + b, 2 a, 
+          2  -4 + 4 _z/                                    
+
+                         /                      2   \   
+                         |              1     _z    |   
+  2 a + 2 b, _z), F[2, 1]|a, b, a + b + -, ---------| = 
+                         \              2  -4 + 4 _z/   
+
+                                                          /      
+          (-a)                                            |      
+  (1 - _z)     F[2, 1](2 a, a + b, 2 a + 2 b, _z), F[2, 1]|0, b, 
+                                                          \      
+
+              2   \                                                 
+      1     _z    |   /  1       \                                  
+  b - -, ---------| = |- - _z + 1| F[2, 1](b - 1, -1, 2 b - 2, _z), 
+      2  -4 + 4 _z/   \  2       /                                  
+
+         /                  2   \                            
+         |          1     _z    |   /  1       \             
+  F[2, 1]|0, b, b - -, ---------| = |- - _z + 1| F[2, 1](-1, 
+         \          2  -4 + 4 _z/   \  2       /             
+
+                              /                  2   \          
+                              |          1     _z    |   /  1   
+  b - 1, 2 b - 2, _z), F[2, 1]|a, 0, a - -, ---------| = |- - _z
+                              \          2  -4 + 4 _z/   \  2   
+
+                                                /             
+      \                                         |          1  
+   + 1| F[2, 1](a - 1, -1, 2 a - 2, _z), F[2, 1]|a, 0, a - -, 
+      /                                         \          2  
+
+       2   \                                               ]
+     _z    |   /  1       \                                ]
+  ---------| = |- - _z + 1| F[2, 1](-1, a - 1, 2 a - 2, _z)]
+  -4 + 4 _z/   \  2       /                                ]
+;
+> solve((-(1/2)*d[1])^(-2*b)*u*v/w+4*(-(1/2)*d[1])^(-2*b)*(b+1/2)*b/c+2*d[1]*b*(-(1/2)*d[1])^(-2*b-1));
+  /                    2 b w (2 b - 2 c + 1)                
+ { b = b, c = c, u = - ---------------------, v = v, w = w, 
+  \                             c v                         
+
+              \                                                
+   d[1] = d[1] }, {b = b, c = c, u = u, v = v, w = w, d[1] = 0}
+              /                                                
+;
+> PolynomialTools:-CoefficientVector(x^2+x, x)+PolynomialTools:-CoefficientVector(x+1, x);
+Error, (in rtable/Sum) invalid input: dimensions do not match: Vector[column](1 .. 3) cannot be added to Vector[column](1 .. 2)
+;
+> recseq[is_rssol](U, (((-1)^(n+1)+1)*(1/2))*(-1)^((n-1)*(1/2))/factorial(n), n);
+/         /       /    (n + 1)    \     (1/2 n - 1/2)\\        
+|         |       \(-1)        + 1/ (-1)             ||        
+|m -> subs|n = m, -----------------------------------||(n) + (n
+\         \                 2 factorial(n)           //        
+
+   + 1) (n + 2) 
+
+  /         /       /    (n + 1)    \     (1/2 n - 1/2)\\(n + 2)   
+  |         |       \(-1)        + 1/ (-1)             ||          
+  |m -> subs|n = m, -----------------------------------||        = 
+  \         \                 2 factorial(n)           //          
+
+  0
+;
+> factor((1/2)*((-1)^(n+1)+1)*(-1)^((1/2)*n-1/2)/factorial(n)+(1/2)*(n+1)*(n+2)*((-1)^(n+3)+1)*(-1)^((1/2)*n+1/2)/factorial(n+2));
+               1                /    (n + 3)     (1/2 n + 1/2) 
+------------------------------- \(-1)        (-1)              
+2 factorial(n) factorial(n + 2)                                
+
+                2
+  factorial(n) n 
+
+           (n + 3)     (1/2 n + 1/2)               
+   + 3 (-1)        (-1)              factorial(n) n
+
+         (1/2 n + 1/2)               2
+   + (-1)              factorial(n) n 
+
+           (n + 3)     (1/2 n + 1/2)             
+   + 2 (-1)        (-1)              factorial(n)
+
+           (1/2 n + 1/2)               
+   + 3 (-1)              factorial(n) n
+
+         (1/2 n - 1/2)                      (n + 1)
+   + (-1)              factorial(n + 2) (-1)       
+
+           (1/2 n + 1/2)             
+   + 2 (-1)              factorial(n)
+
+         (1/2 n - 1/2)                 \
+   + (-1)              factorial(n + 2)/
 ;
