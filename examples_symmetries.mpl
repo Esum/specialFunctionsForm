@@ -1,3 +1,6 @@
+kernelopts(printbytes=false):
+read "formulas.mpl":
+
 # cos(x+a) formulas
 dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, cos, [[a, b], [c, d]], [d=1, b=a], true);
 

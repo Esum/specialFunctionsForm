@@ -1,4 +1,13 @@
-> dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, cos, [[a, b], [c, d]], [d=1, b=a], true)
+    |\^/|     Maple 2016 (APPLE UNIVERSAL OSX)
+._|\|   |/|_. Copyright (c) Maplesoft, a division of Waterloo Maple Inc. 2016
+ \  MAPLE  /  All rights reserved. Maple is a trademark of
+ <____ ____>  Waterloo Maple Inc.
+      |       Type ? for help.
+> kernelopts(printbytes=false):
+> read "formulas.mpl":
+> 
+# cos(x+a) formulas
+> dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, cos, [[a, b], [c, d]], [d=1, b=a], true);
 (cos ∘ h) = x ↦ cos(a+x) satisfies the same differential equation as cos
 Which has a basis of solutions : [sin, cos]
 (cos ∘ h) has the following initial conditions :
@@ -20,11 +29,13 @@ Which has a basis of solutions : [sin, cos]
 Its coefficients in the basis are {l[1] = sin(a), l[2] = cos(a)}, hence :
 	cos(-x+a) = sin(a)*sin(x)+cos(a)*cos(x)
 
-        [(cos)(a + x) = -sin(a) sin(x) + cos(a) cos(x), 
+[ (cos)(a + x) = -sin(a) sin(x) + cos(a) cos(x),
 
-          (cos)(-x + a) = sin(a) sin(x) + cos(a) cos(x)]
-;
-> dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, sin, [[a, b], [c, d]], [d=1, b=a], true)
+     (cos)(-x + a) = sin(a) sin(x) + cos(a) cos(x)]
+
+> 
+# sin(x+a) formulas
+> dsolve_symmetries((D@@2)(y)(x) + y(x), y, x, sin, [[a, b], [c, d]], [d=1, b=a], true);
 (sin ∘ h) = x ↦ sin(a+x) satisfies the same differential equation as sin
 Which has a basis of solutions : [sin, cos]
 (sin ∘ h) has the following initial conditions :
@@ -46,11 +57,13 @@ Which has a basis of solutions : [sin, cos]
 Its coefficients in the basis are {l[1] = -cos(a), l[2] = sin(a)}, hence :
 	sin(-x+a) = -cos(a)*sin(x)+sin(a)*cos(x)
 
-       [(sin)(a + x) = cos(a) sin(x) + sin(a) cos(x), 
+[ (sin)(a + x) = cos(a) sin(x) + sin(a) cos(x),
 
-         (sin)(-x + a) = -cos(a) sin(x) + sin(a) cos(x)]
-;
-> dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [b=1, d=0, c=1], true)
+     (sin)(-x + a) = -cos(a) sin(x) + sin(a) cos(x)]
+
+> 
+# arctan(1/x) formulas
+> dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [b=1, d=0, c=1], true);
 The function h = x ↦ -1/x has a singularity at x = 0
 (arctan ∘ h) = x ↦ arctan(-1/x) satisfies the same differential equation as arctan
 Which has a basis of solutions : [arctan, x -> 1]
@@ -93,52 +106,37 @@ Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
 Its coefficients in the basis are {l[1] = -1, l[2] = 1/2*Pi}, hence :
 	arctan(1/x) = -arctan(x)+1/2*Pi when x < 0
 
-         [[        /  1\               1          ]  
-         [[(arctan)|- -| = arctan(x) - - Pi, 0 < x], 
-         [[        \  x/               2          ]  
+                                  Pi
+[[ (arctan)(- 1/x) = arctan(x) - ----, 0 < x],
+                                  2
 
-           [        /  1\               1          ]  
-           [(arctan)|- -| = arctan(x) - - Pi, x < 0], 
-           [        \  x/               2          ]  
+                                     Pi
+    [ (arctan)(- 1/x) = arctan(x) - ----, x < 0],
+                                     2
 
-           [        /1\                1          ]  
-           [(arctan)|-| = -arctan(x) + - Pi, 0 < x], 
-           [        \x/                2          ]  
+                                    Pi
+    [ (arctan)(1/x) = -arctan(x) + ----, 0 < x],
+                                    2
 
-           [        /1\                1          ]]
-           [(arctan)|-| = -arctan(x) + - Pi, x < 0]]
-           [        \x/                2          ]]
-;
-> dsolve_symmetries((x^2 + 1)*(D@@2)(y)(x) + 2*x*(D)(y)(x), y, x, arctan, [[a, b], [c, d]], [d=1, c=0], true)
-(arctan ∘ h) = x ↦ arctan(x) satisfies the same differential equation as arctan
-Which has a basis of solutions : [arctan, x -> 1]
-(arctan ∘ h) has the following initial conditions :
-	(arctan ∘ h)^(0)(0) = 0
-	(arctan ∘ h)^(1)(0) = 1
-Its coefficients in the basis are {l[1] = 1, l[2] = 0}, hence :
-	arctan(x) = arctan(x)
+                                    Pi
+    [ (arctan)(1/x) = -arctan(x) + ----, x < 0]]
+                                    2
 
-(arctan ∘ h) = x ↦ arctan(-x) satisfies the same differential equation as arctan
-Which has a basis of solutions : [arctan, x -> 1]
-(arctan ∘ h) has the following initial conditions :
-	(arctan ∘ h)^(0)(0) = 0
-	(arctan ∘ h)^(1)(0) = -1
-Its coefficients in the basis are {l[1] = -1, l[2] = 0}, hence :
-	arctan(-x) = -arctan(x)
-
-      [(arctan)(x) = arctan(x), (arctan)(-x) = -arctan(x)]
-;
-> dsolve_symmetries(D(y)(x) - y(x), y, x, exp, [[a, b], [c, d]], [b=a, d=1], true)
-(exp ∘ h) = x ↦ exp(a+x) satisfies the same differential equation as exp
+> 
+# exp(a+x) formula
+> dsolve_symmetries(D(y)(x) - y(x), y, x, exp, [[a, b], [c, d]], [d=1], true);
+(exp ∘ h) = x ↦ exp(b+x) satisfies the same differential equation as exp
 Which has a basis of solutions : [exp]
 (exp ∘ h) has the following initial conditions :
-	(exp ∘ h)^(0)(0) = exp(a)
-Its coefficients in the basis are {l[1] = exp(a)}, hence :
-	exp(a+x) = exp(a)*exp(x)
+	(exp ∘ h)^(0)(0) = exp(b)
+Its coefficients in the basis are {l[1] = exp(b)}, hence :
+	exp(b+x) = exp(b)*exp(x)
 
-                 [(exp)(a + x) = exp(a) exp(x)]
-;
-> dsolve_symmetries(x*(D@@2)(y)(x) + D(y)(x), y, x, ln, [[a, b], [c, d]], [b=a, d=1, c=1], true)
+                        [ (exp)(b + x) = exp(b) exp(x)]
+
+> 
+# ln(a*x) formulas
+> dsolve_symmetries(x*(D@@2)(y)(x) + D(y)(x), y, x, ln, [[a, b], [c, d]], [b=a, d=1, c=1], true);
 (ln ∘ h) = x ↦ ln(a*x) satisfies the same differential equation as ln
 Which has a basis of solutions : [ln, x -> 1]
 (ln ∘ h) has the following initial conditions :
@@ -161,11 +159,11 @@ Which has a basis of solutions : [ln, x -> 1]
 Its coefficients in the basis are {l[1] = -1, l[2] = ln(a)}, hence :
 	ln(a/x) = -ln(x)+ln(a)
 
-     [                               /a\                 ]
-     [(ln)(a x) = ln(x) + ln(a), (ln)|-| = -ln(x) + ln(a)]
-     [                               \x/                 ]
-;
-> dsolve_symmetries((D@@2)(y)(x) - y(x), y, x, sinh, [[a, b], [c, d]], [b=a, d=1], true)
+           [ (ln)(a x) = ln(x) + ln(a),  (ln)(a/x) = -ln(x) + ln(a)]
+
+> 
+# sinh(a+x) formulas
+> dsolve_symmetries((D@@2)(y)(x) - y(x), y, x, sinh, [[a, b], [c, d]], [b=a, d=1], true);
 (sinh ∘ h) = x ↦ sinh(a+x) satisfies the same differential equation as sinh
 Which has a basis of solutions : [sinh, cosh]
 (sinh ∘ h) has the following initial conditions :
@@ -187,91 +185,105 @@ Which has a basis of solutions : [sinh, cosh]
 Its coefficients in the basis are {l[1] = -cosh(a), l[2] = sinh(a)}, hence :
 	sinh(-x+a) = -cosh(a)*sinh(x)+sinh(a)*cosh(x)
 
-     [(sinh)(a + x) = cosh(a) sinh(x) + sinh(a) cosh(x), 
+[ (sinh)(a + x) = cosh(a) sinh(x) + sinh(a) cosh(x),
 
-       (sinh)(-x + a) = -cosh(a) sinh(x) + sinh(a) cosh(x)]
-;
-> hypergeom_symmetries(a, b, c, (4*z^2-4*z)/(4*z^2-4*z+1), z);
-                     [0, -4, 4], [1, -4, 4]
-                               {}
-[                          /                      2        \   
-[          (-2 b)          |[    1   ]         4 z  - 4 z  |   
-[(-2 z + 1)       Hypergeom|[b + -, b], [c], --------------| = 
-[                          |[    2   ]          2          |   
-[                          \                 4 z  - 4 z + 1/   
+     (sinh)(-x + a) = -cosh(a) sinh(x) + sinh(a) cosh(x)]
 
-                                                      (-2 b) 
-  Hypergeom([-2 b + 2 c - 1, 2 b], [c], z), (-2 z + 1)       
+> quit
+memory used=28.3MB, alloc=46.3MB, time=0.47
+    |\^/|     Maple 2016 (APPLE UNIVERSAL OSX)
+._|\|   |/|_. Copyright (c) Maplesoft, a division of Waterloo Maple Inc. 2016
+ \  MAPLE  /  All rights reserved. Maple is a trademark of
+ <____ ____>  Waterloo Maple Inc.
+      |       Type ? for help.
+> kernelopts(printbytes=false):
+> read "formulas.mpl":
+> 
+> hypergeom_symmetries(a, b, c, (-4*z + 4*z^2)/(1 - 4*z + 4*z^2), z);
+                                                   2
+          (-2 b)                                4 z  - 4 z
+[(1 - 2 z)       Hypergeom([b + 1/2, b], [c], --------------) =
+                                                 2
+                                              4 z  - 4 z + 1
 
-           /                      2        \             
-           |[    1   ]         4 z  - 4 z  |             
-  Hypergeom|[b + -, b], [c], --------------| = Hypergeom(
-           |[    2   ]          2          |             
-           \                 4 z  - 4 z + 1/             
+    Hypergeom([-2 b + 2 c - 1, 2 b], [c], z),
 
-                                                                /
-                                            (-2 b + 1)          |
-  [2 b, -2 b + 2 c - 1], [c], z), (-2 z + 1)           Hypergeom|
-                                                                |
-                                                                \
+                                                      2
+             (-2 b)                                4 z  - 4 z
+    (1 - 2 z)       Hypergeom([b + 1/2, b], [c], --------------) =
+                                                    2
+                                                 4 z  - 4 z + 1
 
-                        2        \             
-  [    1   ]         4 z  - 4 z  |             
-  [b - -, b], [c], --------------| = Hypergeom(
-  [    2   ]          2          |             
-                   4 z  - 4 z + 1/             
+    Hypergeom([2 b, -2 b + 2 c - 1], [c], z),
 
-                                                                /
-                                            (-2 b + 1)          |
-  [-2 b + 2 c, 2 b - 1], [c], z), (-2 z + 1)           Hypergeom|
-                                                                |
-                                                                \
+                                                          2
+             (-2 b + 1)                                4 z  - 4 z
+    (1 - 2 z)           Hypergeom([b - 1/2, b], [c], --------------) =
+                                                        2
+                                                     4 z  - 4 z + 1
 
-                        2        \             
-  [    1   ]         4 z  - 4 z  |             
-  [b - -, b], [c], --------------| = Hypergeom(
-  [    2   ]          2          |             
-                   4 z  - 4 z + 1/             
+    Hypergeom([-2 b + 2 c, 2 b - 1], [c], z),
 
-                                ]
-                                ]
-  [2 b - 1, -2 b + 2 c], [c], z)]
-                                ]
-                                ]
-;
-> hypergeom_symmetries(a, b, c, z^2/(4*z-4), z)
-[                     /                        2   \             
-[       (-b)          |        [        1]    z    |             
-[(1 - z)     Hypergeom|[a, b], [a + b + -], -------| = Hypergeom(
-[                     \        [        2]  4 z - 4/             
+                                                          2
+             (-2 b + 1)                                4 z  - 4 z
+    (1 - 2 z)           Hypergeom([b - 1/2, b], [c], --------------) =
+                                                        2
+                                                     4 z  - 4 z + 1
 
-                                                      /        
-                                        (-b)          |        
-  [a + b, 2 b], [2 a + 2 b], z), (1 - z)     Hypergeom|[a, b], 
-                                                      \        
+    Hypergeom([2 b - 1, -2 b + 2 c], [c], z)]
 
-                  2   \                                            
-  [        1]    z    |                                            
-  [a + b + -], -------| = Hypergeom([2 b, a + b], [2 a + 2 b], z), 
-  [        2]  4 z - 4/                                            
+> 
+> hypergeom_symmetries(a, b, c, z^2/(4*(z - 1)), z);
+        (-b)
+[(1 - z)     %1 = Hypergeom([a + b, 2 b], [2 a + 2 b], z),
 
-                       /                        2   \             
-         (-a)          |        [        1]    z    |             
-  (1 - z)     Hypergeom|[a, b], [a + b + -], -------| = Hypergeom(
-                       \        [        2]  4 z - 4/             
+           (-b)
+    (1 - z)     %1 = Hypergeom([2 b, a + b], [2 a + 2 b], z),
 
-                                                      /        
-                                        (-a)          |        
-  [a + b, 2 a], [2 a + 2 b], z), (1 - z)     Hypergeom|[a, b], 
-                                                      \        
+           (-a)
+    (1 - z)     %1 = Hypergeom([a + b, 2 a], [2 a + 2 b], z),
 
-                  2   \                                          
-  [        1]    z    |                                          
-  [a + b + -], -------| = Hypergeom([2 a, a + b], [2 a + 2 b], z)
-  [        2]  4 z - 4/                                          
+           (-a)
+    (1 - z)     %1 = Hypergeom([2 a, a + b], [2 a + 2 b], z)]
 
-  ]
-  ]
-  ]
-  ]
-;
+                                          2
+                                         z
+%1 := Hypergeom([a, b], [a + b + 1/2], -------)
+                                       4 z - 4
+
+> 
+> hypergeom_symmetries(a, b, c, -27*z^2/((z - 4)^3), z);
+                                                               2
+            (-3 b)                                         27 z
+[(- z/4 + 1)       Hypergeom([b + 1/3, b], [2 b + 5/6], - --------) =
+                                                                 3
+                                                          (z - 4)
+
+    Hypergeom([b + 1/6, 3 b], [4 b + 2/3], z),
+
+                                                                  2
+               (-3 b)                                         27 z
+    (- z/4 + 1)       Hypergeom([b + 1/3, b], [2 b + 5/6], - --------) =
+                                                                    3
+                                                             (z - 4)
+
+    Hypergeom([3 b, b + 1/6], [4 b + 2/3], z),
+
+                                                                      2
+               (-3 b + 1)                                         27 z
+    (- z/4 + 1)           Hypergeom([b - 1/3, b], [2 b + 1/6], - --------) =
+                                                                        3
+                                                                 (z - 4)
+
+    Hypergeom([b - 1/6, 3 b - 1], [4 b - 2/3], z),
+
+                                                                      2
+               (-3 b + 1)                                         27 z
+    (- z/4 + 1)           Hypergeom([b - 1/3, b], [2 b + 1/6], - --------) =
+                                                                        3
+                                                                 (z - 4)
+
+    Hypergeom([3 b - 1, b - 1/6], [4 b - 2/3], z)]
+
+> quit
+memory used=62.7MB, alloc=110.3MB, time=1.18
