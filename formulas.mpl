@@ -508,44 +508,45 @@ end proc;
 #  a: a formal parameter
 #  b: a formal parameter
 #  c: a formal parameter
-#  h: a list of 2 lists of 3 paramters
-# Output: a list of identities on special cases of 2F1(a,b;c, (h[1,1]+h[1,2]*_z+h[1,3]*_z^2)/(h[2,1]+h[2,2]*_z+h[2,3]*_z^2))
+#  h: a rational fraction
+#  z: the variable of h
+# Output: a list of identities on special cases of 2F1(a,b;c, h)
 #
-hypergeom_symmetries := proc(a, b, c, h)
-    local res, eqn, deq, deq2, deq_polypow, deq_sym, deq_sym1, deq_sym2, sol, coef, facto, sys, cis, cond0, cond1, cond2, hf, d, u, v, w, l, _y, _z, D_z, valid;
+hypergeom_symmetries := proc(a, b, c, h, z)
+    local res, eqn, deq, deq2, deq_polypow, deq_sym, deq_sym1, deq_sym2, sol, coef, facto, sys, cis, cond0, cond1, cond2, h_vars, _d, _u, _v, _w, l, _y, Dz, valid;
+    h_vars := indets(h) minus {z};
     eqn := 1;
-    deq := _z*(1-_z)*(D@@2)(_y)(_z) + (c - (a + b + 1)*_z)*D(_y)(_z) - a*b*_y(_z);
-    deq2 := DETools[de2diffop](_z*(1-_z)*(D@@2)(_y)(_z) + (w - (u + v + 1)*_z)*D(_y)(_z) - u*v*_y(_z), _y(_z), [D_z, _z]);
-    deq_polypow := (d[1]*_z+d[2])*D(_y)(_z) - d[1]*d[3]*_y(_z);
-    if h[1,1] <> 0 then
-        print("h[1,1] must be null");
+    deq := z*(1-z)*(D@@2)(_y)(z) + (c - (a + b + 1)*z)*D(_y)(z) - a*b*_y(z);
+    deq2 := DETools[de2diffop](z*(1-z)*(D@@2)(_y)(z) + (_w - (_u + _v + 1)*z)*D(_y)(z) - _u*_v*_y(z), _y(z), [Dz, z]);
+    deq_polypow := (_d[1]*z+_d[2])*D(_y)(z) - _d[1]*_d[3]*_y(z);
+    if subs(z=0, h) <> 0 then
+        print("h(0) must be null");
         return NULL
     end if;
-    hf := (h[1,1]+h[1,2]*_z+h[1,3]*_z^2)/(h[2,1]+h[2,2]*_z+h[2,3]*_z^2);
-    deq_sym := gfun[algebraicsubs](deq, gfun[algfuntoalgeq](hf, _y(_z)), _y(_z));
-    deq_sym := gfun[`diffeq*diffeq`](deq_sym, deq_polypow, _y(_z));
-    cis :=  [_y(0) = d[2]^d[3], D(_y)(0) = d[2]^d[3] * subs(_z=0, diff(hf, _z)) * a*b/c + d[1]*d[3] * d[2]^(d[3]-1)];
-    deq_sym := DETools[de2diffop](deq_sym, _y(_z), [D_z, _z]);
-    for cond0 in [solve([coeffs(rem(lcoeff(deq_sym, D_z), _z*(1-_z), _z), _z)], {a, b, c, d[1], d[2], d[3]})] do
+    deq_sym := gfun[algebraicsubs](deq, gfun[algfuntoalgeq](h, _y(z)), _y(z));
+    deq_sym := gfun[`diffeq*diffeq`](deq_sym, deq_polypow, _y(z));
+    cis :=  [_y(0) = _d[2]^_d[3], D(_y)(0) = _d[2]^_d[3] * subs(z=0, diff(h, z)) * a*b/c + _d[1]*_d[3] * _d[2]^(_d[3]-1)];
+    deq_sym := DETools[de2diffop](deq_sym, _y(z), [Dz, z]);
+    for cond0 in [solve([coeffs(rem(lcoeff(deq_sym, Dz), z*(1-z), z), z)], {a, b, c, _d[1], _d[2], _d[3]} union h_vars)] do
         deq_sym1 := subs(op(cond0), deq_sym);
-        facto := quo(lcoeff(deq_sym1, D_z), _z*(1-_z), _z);
+        facto := quo(lcoeff(deq_sym1, Dz), z*(1-z), z);
         sys := {};
-        for coef in [coeffs(deq_sym1, D_z)] do
-            sys := sys union {coeffs(rem(coef, facto, _z), _z)}
+        for coef in [coeffs(deq_sym1, Dz)] do
+            sys := sys union {coeffs(rem(coef, facto, z), z)}
         end do;
-        for cond1 in [solve(sys, {a, b, c, d[1], d[2], d[3]})] do
+        for cond1 in [solve(sys, {a, b, c, _d[1], _d[2], _d[3]} union h_vars)] do
             deq_sym2 := subs(op(cond1), deq_sym1);
-            deq_sym2 := PolynomialTools[FromCoefficientList](map(quo, PolynomialTools[CoefficientList](deq_sym2, D_z), facto, _z), D_z);
-            sys := {op(map(coeffs, [coeffs(deq_sym2-deq2, D_z)], _z))} union {subs(op(cond0), op(cond1), op(2, cis[1]) - 1), subs(op(cond0), op(cond1), op(2, cis[1])*u*v/w - op(2, cis[2]))};
-            for cond2 in [solve(sys, {u, v, w, d[1], d[2], d[3]})] do
+            deq_sym2 := PolynomialTools[FromCoefficientList](map(quo, PolynomialTools[CoefficientList](deq_sym2, Dz), facto, z), Dz);
+            sys := {op(map(coeffs, [coeffs(deq_sym2-deq2, Dz)], z))} union {subs(op(cond0), op(cond1), op(2, cis[1]) - 1), subs(op(cond0), op(cond1), op(2, cis[1])*_u*_v/_w - op(2, cis[2]))};
+            for cond2 in [solve(sys, {_u, _v, _w, _d[1], _d[2], _d[3]})] do
                 valid := true;
                 for sol in cond2 do
-                    if has(op(2, sol), u) or has(op(2, sol), v) or has(op(2, sol), w) then
+                    if has(op(2, sol), _u) or has(op(2, sol), _v) or has(op(2, sol), _w) then
                         valid := false
                     end if
                 end do;
-                if valid then
-                    res[eqn] := subs(op(cond1), op(cond2), (d[1]*_z + d[2])^d[3] * F[2,1](a, b, c, hf)) = subs(op(map(proc (_) options operator, arrow; subsop(2=subs(op(cond1), op(2, _)), _) end proc, [op(cond2)])), F[2,1](u, v, w, _z));
+                if valid and not 0 in subs(op(cond0), op(cond1), op(cond2), [a, b, c, _u, _v, _w]) then
+                    res[eqn] := subs(op(cond0), op(cond1), op(cond2), (_d[1]*z + _d[2])^_d[3] * Hypergeom([a, b], [c], h)) = subs(op(map(proc (_) options operator, arrow; subsop(2=subs(op(cond1), op(2, _)), _) end proc, [op(cond2)])), Hypergeom([_u, _v], [_w], z));
                     eqn := eqn + 1
                 end if
             end do
