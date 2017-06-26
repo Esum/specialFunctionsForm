@@ -2,7 +2,7 @@ recseq := module ()
 
     description "Tools for recursive sequences";
 
-    export rscreate, rsdiff, `rseq=rseq`, diffeqtors, rstodiffeq, is_rssol, bound;
+    export rscreate, rsdiff, `rseq=rseq`, rstopol, diffeqtors, rstodiffeq, is_rssol, bound;
 
     #rscreate
     # Input:
@@ -78,6 +78,62 @@ recseq := module ()
             printf("Thus the sequence of the derivative %a satisfies %a, with %a.\n", (n+1)*u(n+1), `+`(op(rs_op)), diffcis)
         end if;
         rscreate(`+`(op(rs_op)), u, n, diffcis)
+    end proc;
+
+    #rstopol
+    # Input:
+    #  rs: a recursive sequence
+    #  S: the variable of the sequence
+    #  x: the variable of the polynomial
+    # Output: the polynomial in S and x associated to rs
+    #
+    rstopol := proc(rs, S:=NULL, x:=NULL)
+        local _S, _x, u, n, rs_op, i, res;
+        u := rs[2];
+        n := rs[3];
+        if S = NULL then
+            _S := u
+        else
+            _S := S
+        end if;
+        if x = NULL then
+            _x := n
+        else
+            _x := x
+        end if;
+        rs_op := rs[1];
+        if op(0, rs_op) = u then
+            if op(0, op(rs_op)) = `+`then
+                return _S ^ op(2, op(rs_op))
+            else
+                return 1
+            end if
+        elif op(0, rs_op) = `*` then
+            if op(0, op(op(-1, rs_op))) = `+`then
+                return subs(n=_x, `*`(seq(op(i, rs_op), i=1..nops(rs_op)-1))) * _S ^ op(2, op(op(-1, rs_op)))
+            else
+                return subs(n=_x, `*`(seq(op(i, rs_op), i=1..nops(rs_op)-1)))
+            end if
+        else
+            res := 0;
+            rs_op := [op(rs_op)];
+            for i from 1 to nops(rs_op) do
+                if op(0, rs_op[i]) = `*` then
+                    if op(0, op(op(-1, rs_op[i]))) = `+` then
+                        res := res + subs(n=_x, `*`(seq(op(j, rs_op[i]), j=1..nops(rs_op[i])-1))) * _S ^ op(2, op(op(-1, rs_op[i])))
+                    else
+                        res := res + subs(n=_x, `*`(seq(op(j, rs_op[i]), j=1..nops(rs_op[i])-1))) * 1
+                    end if
+                else
+                    if op(0, op(rs_op[i])) = `+` then
+                        res := res + _S ^ op(2, op(rs_op[i]))
+                    else
+                        res := res + 1
+                    end if
+                end if
+            end do;
+            return res
+        end if
     end proc;
 
     #`rseq=rseq`
@@ -229,6 +285,7 @@ derive := module ()
     get_diffeq[arctan] := (_x^2 + 1)*(D@@2)(_y)(_x) + 2*_x*(D)(_y)(_x);
     get_diffeq[erf] := (D@@2)(_y)(_x) + 2*_x*(D)(_y)(_x);
     get_diffeq[erfc] := (D@@2)(_y)(_x) + 2*_x*(D)(_y)(_x);
+    #get_diffeq[Hypergeom] := _x*(1 - _x)*(D@@2)(_y)(_x) + (_c - (_a + _b + 1)*_x)*D(_y)(_x) - _a*_b*_y(_x)
 
     #derive_node
     # Input:
@@ -245,7 +302,7 @@ derive := module ()
         if assigned(get_derivative[f]) then
             return get_derivative[f](x)
         end if;
-        gdeq := subs(x=_x, y=_y, deq);
+        gdeq := subs(x = _x, y = _y, deq);
         if assigned(diffeqs_table[gdeq]) then
             basis := diffeqs_table[gdeq][1..-2];
             rs := [seq(recseq[diffeqtors]({gdeq} union {op(basis[i][2])}, _y(_x), u, n), i=1..nops(basis))];
@@ -345,6 +402,8 @@ derive := module ()
             else
                 return Derive(exp([op(expr)][2] * ln([op(expr)][1])), x, proof)
             end if
+        elif op(0, expr) = Hypergeom then
+            return Derive(op(3, expr), x) * op(1, expr)[1] * op(1, expr)[2] / op(2, expr)[1] * Hypergeom([seq(op(1, expr)[i]) + 1, i=1..2], [op(2, expr)[1] + 1], op(3, expr))
         elif assigned(get_diffeq(op(0, expr))) then
             # the node is a special function that we know
             return Derive(op(expr), x)*subs(_x=op(expr), derive_node(op(0, expr), get_diffeq[op(0, expr)], _y, _x, proof, remember))
@@ -554,6 +613,81 @@ hypergeom_symmetries := proc(a, b, c, h, z)
     end do;
     [seq(res[i], i=1..(eqn-1))]
 end proc;
+
+#hypergeom_symmetries_groebner_basis
+# Input:
+#  a, b, c: formal parameters
+#  h: a rational fraction
+#  z: the variable of h
+#  _u, _v, _w: formal parameters
+#  _d: a formal parameter or a list of formal parameters
+# Output: a list of groebner basis of conditions on a, b, c, _u, _v, _w and _d
+#
+hypergeom_symmetries_groebner_basis := proc(a, b, c, h, z, _u, _v, _w, _d)
+    local res, init2, eqn, h2, deq, deq2, deq_polypow, deq_sym, coef, facto, sys, cis, cond, cond2, conds, h_vars, h_vars2, _y, Dz, valid;
+    h_vars := indets(h) minus {z};
+    eqn := 1;
+    deq := z*(1-z)*(D@@2)(_y)(z) + (c - (a + b + 1)*z)*D(_y)(z) - a*b*_y(z);
+    deq2 := DETools[de2diffop](z*(1-z)*(D@@2)(_y)(z) + (_w - (_u + _v + 1)*z)*D(_y)(z) - _u*_v*_y(z), _y(z), [Dz, z]);
+    deq_polypow := (z+_d[1])*D(_y)(z) - _d[2]*_y(z);
+    conds := [
+        {limit(h, z=0, right), limit(h, z=1, left)-1, degree(numer(h), z) > degree(denom(h), z)},
+        {limit(h, z=0, right)-1, subs(z=1, denom(h)), limit(h, z=infinity)},
+        {limit(h, z=0, right), subs(z=1, denom(h)), limit(h, z=infinity)-1},
+        {limit(h, z=0, right), limit(h, z=1, left)-1, limit(h, z=infinity)-1},
+        {limit(h, z=0, right), limit(h, z=1, left), limit(h, z=infinity)-1},
+        {limit(h, z=0, right), limit(h, z=1, left)-1, limit(h, z=infinity)}];
+    for cond in map(solve, conds, h_vars) do
+        h2 := subs(op(cond), h);
+        h_vars2 := indets(h2) minus {z};
+        deq_sym := gfun[algebraicsubs](deq, gfun[algfuntoalgeq](h2, _y(z)), _y(z));
+        deq_sym := gfun[`diffeq*diffeq`](deq_sym, deq_polypow, _y(z));
+        deq_sym := DETools[de2diffop](deq_sym, _y(z), [Dz, z]);
+        sys := {coeffs(numer(rem(lcoeff(deq_sym, Dz), z*(1-z), z)), z)};
+        facto := numer(quo(lcoeff(deq_sym, Dz), z*(1-z), z));
+        for coef in [coeffs(deq_sym, Dz)] do
+            sys := sys union {coeffs(collect(numer(rem(coef, facto, z)), z), z)}
+        end do;
+        deq_sym := PolynomialTools[FromCoefficientList](map(quo, PolynomialTools[CoefficientList](deq_sym, Dz), facto, z), Dz);
+        sys := sys union {op(map(numer, map(coeffs, [coeffs(deq_sym-deq2, Dz)], z)))};
+        res[eqn] := [cond, Groebner[Basis](sys, lexdeg([a, b, c, op(h_vars2), _d[1], _d[2]], [_u, _v, _w]))];
+        eqn := eqn + 1
+    end do;
+    return [seq(res[i], i=1..eqn-1)]
+end proc;
+
+#hypergeom_symmetries_groebner
+# Input:
+#  h: a rational fraction
+#  z: the variable of h
+# Output: a list of formulas satisfied by hypergeometric functions composed with h
+#
+hypergeom_symmetries_groebner := proc(h, z)
+    local basises, basis, sol, cond, h2, a, b, c, _u, _v, _w, _d, eqn, eqn2, res, res2, i, j, deriv, l, vl;
+    basises := hypergeom_symmetries_groebner_basis(a, b, c, h, z, _u, _v, _w, _d);
+    eqn := 1;
+    for basis in basises do
+        cond := basis[1];
+        basis := basis[2];
+        h2 := subs(op(cond), h);
+        for sol in [solve(basis, {a, b, c, _u, _v, _w, _d[1], _d[2]} union (indets(h2) minus {z}))] do if not (0 in subs(op(sol), [a, b, c, _u, _v, _w]) or _d[2] in subs(op(sol), [a, b, c, _u, _v, _w])) then
+            res[eqn] := [h2, subs(op(sol), (z + _d[1])^_d[2]), subs(op(sol), Hypergeom({a, b}, [c], h2)), subs(op(sol), Hypergeom({_u, _v}, [_w], z))];
+            eqn := eqn + 1
+        end if end do
+    end do;
+    eqn2 := 1;
+    for i from 1 to eqn-1 do
+        h2 := res[i][1];
+        if subs(z=0, h2) = 0 then
+            for vl in [solve([subs(z=0, diff(res[i][2], z)) + subs(z=0, res[i][2]*diff(h2, z))*`*`(op(op(1, res[i][3])))/op(op(2, res[i][3])) - l*`*`(op(op(1, res[i][4])))/op(op(2, res[i][4])), subs(z=0, res[i][2]) - l], {l})] do
+                res2[eqn2] := res[i][2]*res[i][3] = subs(op(vl), l)*res[i][4];
+                #res2[eqn2] := subs(seq(op(j, indets(res2[eqn2]) minus {z}) = [a, b, c, op(indets(h2) minus {z}), _u, _v, _w, _d[1], _d[2]][j], j=1..nops(indets(res2[eqn2]) minus {z})), res2[eqn2]);
+                eqn2 := eqn2 + 1
+            end do
+        end if
+    end do;
+    {seq(res2[j], j=1..eqn2-1)}
+end proc; 
 
 #diffeq_singularities
 # Input:
