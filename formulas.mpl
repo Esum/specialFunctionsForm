@@ -631,7 +631,8 @@ hypergeom_symmetries_groebner_basis := proc(a, b, c, h, z, _u, _v, _w, _d)
     deq2 := DETools[de2diffop](z*(1-z)*(D@@2)(_y)(z) + (_w - (_u + _v + 1)*z)*D(_y)(z) - _u*_v*_y(z), _y(z), [Dz, z]);
     deq_polypow := (z+_d[1])*D(_y)(z) - _d[2]*_y(z);
     conds := [
-        {limit(h, z=0, right), limit(h, z=1, left)-1, degree(numer(h), z) > degree(denom(h), z)},
+        {limit(h, z=0, right), limit(h, z=1, left)-1, degree(numer(h), z) > degree(denom(h), z), lcoeff(numer(h), z) * lcoeff(denom(h), z) > 0},
+        {limit(h, z=0, right), limit(h, z=1, left), degree(numer(h), z) > degree(denom(h), z), lcoeff(numer(h), z) * lcoeff(denom(h), z) > 0},
         {limit(h, z=0, right)-1, subs(z=1, denom(h)), limit(h, z=infinity)},
         {limit(h, z=0, right), subs(z=1, denom(h)), limit(h, z=infinity)-1},
         {limit(h, z=0, right), limit(h, z=1, left)-1, limit(h, z=infinity)-1},
