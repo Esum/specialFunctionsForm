@@ -425,7 +425,7 @@ end proc;
 dsolve_symmetries := proc(deq, y, x, f, a, conditions:=[], proof:=false)
     local order, eq, gdeq, sing, cis, i, value, Dx, res, basis, sol, coefs, eqn;
     order := PDETools[difforder](deq);
-    Dx := proc (_) options operator, arrow; derive[Derive](_, x, 1, true) end proc;
+    Dx := proc (_) options operator, arrow; derive[Derive](_, x, 1, proof) end proc;
     eqn := 1;
     for eq in symmetric_diffeqs(deq, y, x, a) do
         eq := subs(op(conditions), eq);
@@ -579,13 +579,13 @@ known_transformations := proc(deq, y, x, a)
     poly_deq := DETools[de2diffop](deq, y(x), [Dx, x]);
     poly_deq := collect(poly_deq/lcoeff(poly_deq, Dx), Dx);
     i := 1;
-    for eqd in diffeqs_table(y, x) do if eqd[1] <> deq then
-        poly_sym := DETools[de2diffop](gfun[algebraicsubs](eqd[1], gfun[algfuntoalgeq]((a[1,1]*x+a[1,2])/(a[2,1]*x+a[2,2]), y(x)), y(x)), y(x), [Dx, x]);
+    for eqd in entries(diffeqs_table, 'pairs') do eqd := op(1, eqd); if subs(_x=x, _y=y, eqd) <> deq then
+        poly_sym := DETools[de2diffop](gfun[algebraicsubs](eqd, gfun[algfuntoalgeq]((a[1,1]*_x+a[1,2])/(a[2,1]*_x+a[2,2]), _y(_x)), _y(_x)), _y(_x), [Dx, x]);
         poly_sym := collect(poly_sym/lcoeff(poly_sym, Dx), Dx);
         sys := {op(map(coeffs, map(collect, map(numer, [coeffs(collect(poly_deq - poly_sym, Dx), Dx)]), x), x))};
         basis := Groebner[Basis](sys union {-a[1,1]*a[2,2]*t+a[1,2]*a[2,1]*t+1}, lexdeg([t], [a[1,1], a[1,2], a[2,1], a[2,2]]));
         if basis[1] <> 1 then
-            res[i] := [eqd[1], remove(has, basis, t)];
+            res[i] := [subs(x=_x, y=_y, eqd), remove(has, basis, t)];
             i := i + 1
         end if
     end if end do;
@@ -620,27 +620,32 @@ end proc;
 #  f: a known function solution of deq
 #  a: a variable or a 2x2 matrix of variables
 #  conditions: additionnal conditions for a
+#  proof: print a proof of the formula
 # Output: a list of formulas satisfied by homographic compositions of f
 #
-dsolve_transformations := proc(deq, y, x, f, a, init_point:=0, conditions:=[])
-    local deq2, eq, eq2, cis, i, j, Dx, res, eqd, sol, coefs, eqn;
-    Dx := proc (_) options operator, arrow; diff(_, x) end proc;
+dsolve_transformations := proc(deq, y, x, f, a, conditions:=[], proof:=false)
+    local eq, eq2, cis, i, j, Dx, res, eqd, basis, sol, coefs, eqn;
+    Dx := proc (_) options operator, arrow; derive[Derive](_, x, 1, proof) end proc;
     eqn := 1;
     for eq in transformations_diffeqs(deq, y, x, a) do
         eq[2] := subs(op(conditions), eq[2]);
-        for eqd in diffeqs_table(y, x) do if eqd[1] = eq[1] then
-            cis := {};
-            for i from 1 to nops(eqd[2]) do
-                cis := {op(cis), eval(subs(x=eqd[3], (Dx@@(i-1))(f(eq[2])))) - add(l[j]*[op(eqd[2][j][2][i])][2], j=1..nops(eqd[2]))}
-            end do;
-            coefs := {seq(l[i], i=1..nops(eqd[2]))};
-            sol := solve(cis, {a[1,1], a[1,2], a[2,1], a[2,2]} union coefs);
-            if sol <> NULL then
-                eq2 := subs(op(sol), eq[2]);
-                res[eqn] := ``(f)(eq2) = add(subs(op(sol), l[j])*eqd[2][j][1](x), j=1..nops(eqd[2]));
-                eqn := eqn + 1;
-            end if
-        end if; end do;
+        for eqd in entries(diffeqs_table, 'pairs') do 
+            basis := op(2, eqd);
+            eqd := op(1, eqd);
+            if eqd = subs(x=_x, y=_y, eq[1]) then
+                cis := {};
+                for i from 1 to nops(basis)-1 do
+                    cis := {op(cis), eval(subs(x=basis[-1], (Dx@@(i-1))(f(eq[2])))) - add(l[j]*[op(basis[j][2][i])][2], j=1..nops(basis)-1)}
+                end do;
+                coefs := {seq(l[i], i=1..nops(basis)-1)};
+                sol := solve(cis, {a[1,1], a[1,2], a[2,1], a[2,2]} union coefs);
+                if sol <> NULL then
+                    eq2 := subs(op(sol), eq[2]);
+                    res[eqn] := ``(f)(eq2) = add(subs(op(sol), l[j])*basis[j][1](x), j=1..nops(basis)-1);
+                    eqn := eqn + 1;
+                end if
+            end if;
+        end do;
     end do;
     subs(op(values_table), [seq(res[j], j=1..(eqn-1))])
 end proc;
