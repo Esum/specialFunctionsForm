@@ -629,16 +629,19 @@ hypergeom_symmetries_groebner_basis := proc(a, b, c, h, z, _u, _v, _w)
     eqn := 1;
     deq := z*(1-z)*(D@@2)(_y)(z) + (c - (a + b + 1)*z)*D(_y)(z) - a*b*_y(z);
     deq2 := DETools[de2diffop](z*(1-z)*(D@@2)(_y)(z) + (_w - (_u + _v + 1)*z)*D(_y)(z) - _u*_v*_y(z), _y(z), [Dz, z]);
-    #deq_polypow := (z+_d[1])*D(_y)(z) - _d[2]*_y(z);
     conds := [
-        {limit(h, z=0, right), limit(h, z=1, left)-1, degree(numer(h), z) > degree(denom(h), z)},
-        {limit(h, z=0, right), limit(h, z=1, left), degree(numer(h), z) > degree(denom(h), z)},
-        {limit(h, z=0, right)-1, subs(z=1, denom(h)), limit(h, z=infinity)},
-        {limit(h, z=0, right), subs(z=1, denom(h)), limit(h, z=infinity)-1},
-        {limit(h, z=0, right), limit(h, z=1, left)-1, limit(h, z=infinity)-1},
-        {limit(h, z=0, right), limit(h, z=1, left), limit(h, z=infinity)-1},
-        {limit(h, z=0, right), limit(h, z=1, left)-1, limit(h, z=infinity)}];
+        {limit(h, z=0, right), limit(h, z=1, left)-1, degree(numer(h), z) > degree(denom(h), z)}, # 0 -> 0, 1 -> 1, inf -> inf
+        {limit(h, z=0, right), limit(h, z=1, left), degree(numer(h), z) > degree(denom(h), z)}, # 0 -> 0, 1 -> 0, inf -> inf
+        {limit(h, z=0, right), limit(h, z=1, left)-1, degree(numer(h), z) < degree(denom(h), z)}, # 0 -> 0, 1 -> 1, inf -> 0
+        {limit(h, z=0, right), limit(h, z=1, left), degree(numer(h), z) < degree(denom(h), z)}, # 0 -> 0, 1 -> 0, inf -> 0
+        {limit(h, z=0, right)-1, subs(z=1, denom(h)), degree(numer(h), z) < degree(denom(h), z)}, # 0 -> 1, 1 -> 0, inf -> 0
+        {limit(h, z=0, right), subs(z=1, denom(h)), degree(numer(h), z) > degree(denom(h), z)}, # 0 -> 0, 1 -> inf, inf -> inf
+        {limit(h, z=0, right), subs(z=1, denom(h)), lcoeff(numer(h), z) - lcoeff(denom(h), z), degree(numer(h), z) - degree(denom(h), z)}, # 0 -> 0, 1 -> inf, inf -> 1
+        {limit(h, z=0, right), limit(h, z=1, left)-1, lcoeff(numer(h), z) - lcoeff(denom(h), z), degree(numer(h), z) - degree(denom(h), z)}, # 0 -> 0, 1 -> 1, inf -> 1
+        {limit(h, z=0, right), limit(h, z=1, left), lcoeff(numer(h), z) - lcoeff(denom(h), z), degree(numer(h), z) - degree(denom(h), z)}, # 0 -> 0, 1 -> 0, inf -> 1
+        {subs(z=0, denom(h)), subs(z=1, denom(h)), lcoeff(numer(h), z) - lcoeff(denom(h), z), degree(numer(h), z) - degree(denom(h), z)}]; # 0 -> inf, 1 -> inf, inf -> 1
     for cond in map(solve, conds, h_vars) do
+        print(cond);
         h2 := subs(op(cond), h);
         den := factor(denom(h2));
         if op(0, den) = `*` then
@@ -650,19 +653,19 @@ hypergeom_symmetries_groebner_basis := proc(a, b, c, h, z, _u, _v, _w)
             if op(0, den[k]) = `^`then
                 den[k] := [op(1, den[k]), op(2, den[k])]
             else
-                den[k] := [1, den[k]]
+                den[k] := [den[k], 1]
             end if
         end do;
         polys := {};
         for k from 1 to nops(den) do
-            if has(den[k][2], z) then
+            if has(den[k][1], z) then
                 if polys = {} then
-                    polys := {[[den[k][2], -den[k][1]*a]]}
+                    polys := {[[den[k][1], -den[k][2]*a]], [[den[k][1], -den[k][2]*b]]}
                 else
                     sys := polys;
                     polys := {};
                     for poly in sys do
-                        polys := polys union {[op(poly), [den[k][2], -den[k][1]*a]], [op(poly), [den[k][2], -den[k][1]*b]]}
+                        polys := polys union {[op(poly), [den[k][1], -den[k][2]*a]], [op(poly), [den[k][1], -den[k][2]*b]]}
                     end do
                 end if
             end if
@@ -670,6 +673,7 @@ hypergeom_symmetries_groebner_basis := proc(a, b, c, h, z, _u, _v, _w)
         if polys = {} then
             polys := {[]}
         end if;
+        print(polys);
         for poly in polys do
             deqs_polypow := [seq(poly[i][1]*D(_y)(z) - poly[i][2]*_y(z), i=1..nops(poly))];
             h_vars2 := indets(h2);
@@ -691,7 +695,7 @@ hypergeom_symmetries_groebner_basis := proc(a, b, c, h, z, _u, _v, _w)
                 end do;
                 deq_sym := PolynomialTools[FromCoefficientList](map(quo, PolynomialTools[CoefficientList](deq_sym, Dz), facto, z), Dz);
                 sys := sys union {op(map(numer, map(coeffs, [coeffs(deq_sym-deq2, Dz)], z)))};
-                res[eqn] := [cond, poly, Groebner[Basis](sys, lexdeg([a, b, c, op(h_vars2)], [_u, _v, _w]))];
+                res[eqn] := [cond, poly, Groebner[Basis](sys, plex(a, b, c, op(h_vars2), _u, _v, _w))];
                 eqn := eqn + 1
             end if
         end do
@@ -720,12 +724,12 @@ hypergeom_symmetries_groebner := proc(h, z)
         end if end do
     end do;
     eqn2 := 1;
+    print(seq(res[j], j=1..eqn-1));
     for i from 1 to eqn-1 do
         h2 := res[i][1];
         if subs(z=0, h2) = 0 then
             for vl in [solve([subs(z=0, diff(`*`(op(res[i][2])), z)) + subs(z=0, `*`(op(res[i][2]))*diff(h2, z)) * `*`(op(op(1, res[i][3])))/op(op(2, res[i][3])) - l*`*`(op(op(1, res[i][4])))/op(op(2, res[i][4])), subs(z=0, `*`(op(res[i][2]))) - l], {l})] do
                 res2[eqn2] := `*`(op(res[i][2]), res[i][3]) = subs(op(vl), l)*res[i][4];
-                #res2[eqn2] := subs(seq(op(j, indets(res2[eqn2]) minus {z}) = [a, b, c, op(indets(h2) minus {z}), _u, _v, _w, _d[1], _d[2]][j], j=1..nops(indets(res2[eqn2]) minus {z})), res2[eqn2]);
                 eqn2 := eqn2 + 1
             end do
         end if
