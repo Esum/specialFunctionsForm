@@ -40,9 +40,9 @@ searchideal := proc(R, i, n, x, pars, ineqs, basis, depth, default, fgb:=true)
     # try to cancel R[i] entirely first then try to cancel the j leading terms
     for j in [nops(R[i]), seq(k, k=1..nops(R[i])-1)] do
         if fgb then
-            b := FGb[fgb_gbasis_elim]([op(basis), op(map(coeffs, map(collect, map(numer, [seq(op(k, R[i]), k=1..j)]), x), x)), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], 0, [seq(t[k], k=1..nops(ineqs))], pars);
+            b := FGb[fgb_gbasis_elim]([op(basis), op(map(coeffs, map(collect, map(numer, [seq(op(nops(R[i]) - k + 1, R[i]), k=1..j)]), x), x)), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], 0, [seq(t[k], k=1..nops(ineqs))], pars);
         else
-            b := Groebner[Basis]([op(basis), op(map(coeffs, map(collect, map(numer, [seq(op(k, R[i]), k=1..j)]), x), x)), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], lexdeg([seq(t[k], k=1..nops(ineqs))], pars));
+            b := Groebner[Basis]([op(basis), op(map(coeffs, map(collect, map(numer, [seq(op(nops(R[i]) - k + 1, R[i]), k=1..j)]), x), x)), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], lexdeg([seq(t[k], k=1..nops(ineqs))], pars));
             for j from 1 to nops(ineqs) do
                 b := remove(has, b, t[j])
             end do
@@ -91,11 +91,12 @@ gcdideal := proc(ore1, ore2, x, ineqs:={}, basis:=[], depth:=1, fgb:=false)
     local A, pars, n, R, ideal, gcd, k, t, counter;
     A := OreTools[SetOreRing](x, 'differential');
     gcd := OreTools[GCD]['right'](ore1, ore2, A);
+    n, R := op(OreTools[Euclidean]['right'](ore1, ore2, A));
+    print(R);
     if OreTools[Utility][Degree](gcd) > 0 then
         # the gcd is different from 1
         return gcd, [0]
     end if;
-    n, R := op(OreTools[Euclidean]['right'](ore1, ore2, A));
     pars := [op((indets({op(ore1)}, 'name') union indets({op(ore2)}, 'name')) minus {x})];
     return searchideal([seq(R[i], i=3..n)], 1, n-2, x, pars, ineqs, [], depth, ore2);
 end proc;
@@ -163,7 +164,7 @@ diffeqs_table[_x*(D@@2)(_y)(_x) + (D)(_y)(_x)] := [
 # Output: a groebner list of groebner basis of the symmetries and tranformation of LDE
 #
 diffeq_symmetries := proc (LDE, y, x, g, deq, deqpar, ineqs:={}, fgb:=false)
-    local deq1, poly_deq, poly_sym, pars, Dx, sys, basis, t, i, c, symgcd, gcd, ideal;
+    local deq1, poly_deq, poly_sym, pars, Dx, sys, basis, t, i, gcd, ideal, ld1, ld2;
     if type(LDE, 'set') then
         deq1 := op(remove(type, LDE, `=`));
     else
@@ -172,10 +173,14 @@ diffeq_symmetries := proc (LDE, y, x, g, deq, deqpar, ineqs:={}, fgb:=false)
     pars := [op(indets(deq, 'name') minus {y, x})];
     poly_deq := DETools[de2diffop](subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), deq), y(x), [Dx, x]);
     poly_deq := collect(poly_deq/lcoeff(poly_deq, Dx), Dx);
+    ld1 := ldegree(poly_deq, Dx);
     poly_sym := DETools[de2diffop](gfun[algebraicsubs](deq1, gfun[algfuntoalgeq](g, y(x)), y(x)), y(x), [Dx, x]);
     poly_sym := collect(poly_sym/lcoeff(poly_sym, Dx), Dx);
+    ld2 := ldegree(poly_sym, Dx);
+    poly_sym := normal(poly_sym/Dx^min(ld1, ld2));
+    poly_deq := normal(poly_deq/Dxmin(ld1, ld2));
     gcd, ideal := gcdideal(OreTools[Converters][FromPolyToOrePoly](poly_deq, Dx), OreTools[Converters][FromPolyToOrePoly](poly_sym, Dx), x, ineqs union subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), ineqs), 1);
-    nops(pars), DETools[diffop2de](OreTools[Converters][FromOrePolyToPoly](gcd, Dx), y(x), [Dx, x]), ideal;
+    nops(pars), collec(Dx^min(ld1, ld2) * DETools[diffop2de](OreTools[Converters][FromOrePolyToPoly](gcd, Dx), y(x), [Dx, x]), Dx), ideal;
 end proc;
 
 
@@ -247,6 +252,7 @@ identities := proc(LDE, y, x, tab:=[], itype:='homography', ineqs:={}, fgb:=fals
     end if;
     for deq in {deq, op(tab)} do
         ndeqpar, rdeq, gbase := diffeq_symmetries(LDE, y, x, g, deq, deqpar, sys union ineqs, fgb);
+        print(deq, rdeq, gbase);
         for sol in [solve(gbase, {seq(deqpar[i], i=1..ndeqpar)} union indets(LDE, 'name') union indets(g) minus {x})] do
             sol := [allvalues(sol)][1];
             g2 := subs(op(sol), g);
