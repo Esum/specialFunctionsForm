@@ -52,7 +52,7 @@ searchideal := proc(R, i, n, x, pars, ineqs, basis, depth, default, fgb:=true)
                 if depth = 1 or i = n then
                     i_ := i;
                     j := -1;
-                    while j < 0 and i_ > 1 do
+                    while j < 0 and i_ >= 1 do
                         if i_ = 1 then
                             prev := default
                         else
@@ -94,7 +94,7 @@ gcdideal := proc(ore1, ore2, x, ineqs:={}, basis:=[], depth:=1, fgb:=false)
     if OreTools[Utility][Degree](gcd) > 0 then
         # the gcd is different from 1
         return gcd, [0]
-    end if
+    end if;
     n, R := op(OreTools[Euclidean]['right'](ore1, ore2, A));
     pars := [op((indets({op(ore1)}, 'name') union indets({op(ore2)}, 'name')) minus {x})];
     return searchideal([seq(R[i], i=3..n)], 1, n-2, x, pars, ineqs, [], depth, ore2);
@@ -247,21 +247,18 @@ identities := proc(LDE, y, x, tab:=[], itype:='homography', ineqs:={}, fgb:=fals
     end if;
     for deq in {deq, op(tab)} do
         ndeqpar, rdeq, gbase := diffeq_symmetries(LDE, y, x, g, deq, deqpar, sys union ineqs, fgb);
-        print(gbase);
         for sol in [solve(gbase, {seq(deqpar[i], i=1..ndeqpar)} union indets(LDE, 'name') union indets(g) minus {x})] do
             sol := [allvalues(sol)][1];
             g2 := subs(op(sol), g);
             rdeq2 := subs(op(sol), rdeq);
-            print(deq, sol, g2);
             if resustant(numer(g2), denom(g2), x) <> 0  then
                 if degree(denom(g2), x) = 0 then
                     g2 := collect(g2, x)
                 end if;
-                print(deq, sol, g2);
-                print(gfun[poltodiffeq](rdeq2, [gfun[algebraicsubs](LDE, gfun[algfuntoalgeq](g2, y(x)), y(x), {seq((D@@(i-1))(y)(0)=subs(x=0, (D@@(i-1))(g)(x)), i=1..2*PDETools[difforder](LDE))})], [y(x)], y(x)))
-                #for sol2 in solve(recognize(LDE, deq, g2, y, x, ineqs, icspars, fgb), {seq(icspars[i], i=1..PDETools[difforder](deq, x)), seq(deqpar[i], i=1..ndeqpar)}) do
-                #    print(sol2)
-                #end do
+                if true or gfun[poltodiffeq](rdeq2, [gfun[algebraicsubs](LDE, gfun[algfuntoalgeq](g2, y(x)), y(x), {seq((D@@(i-1))(y)(0)=subs(x=0, (D@@(i-1))(g)(x)), i=1..2*PDETools[difforder](LDE))})], [y(x)], y(x)) = y(x) then
+                    printf("%a(%a) satisfies:", y, g2);
+                    print({deq, y(0)=subs(x=0, y(g2)), seq((D@@(i-1))(y)(0)=subs(x=0, diff(y(g2), x$(i-1))), i=2..PDETools[difforder](deq))})
+                end if;
             end if
         end do
     end do
