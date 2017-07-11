@@ -1,3 +1,40 @@
+identities := module ()
+
+export
+    identities,
+    getfunction,
+    symmetries,
+    gcdideal,
+    recognize,
+    diffeqs_table,
+    formal_sol,
+    `formal_sol/prettyprint`,
+    testg,
+    force_export,
+    # module variables
+    use_FGb;
+
+local
+    searchideal,
+    normalize_ore,
+    algeqtoseries,
+    `formal_sol/nt`,
+    ModulelLoad;
+
+ModulelLoad := proc ()
+    if not type(gfun, '`module`') then
+        error "gfun module not loaded."
+    end if;
+    use_FGb := type(FGb, '`module`')
+end proc;
+ModulelLoad();
+
+force_export := proc ()
+    return [searchideal, normalize_ore, `formal_sol/nt`]
+end proc;
+    
+
+
 #normalize_ore
 # Input:
 #  ore: an ore polynomial
@@ -6,7 +43,7 @@
 #  pars: the list of variables in basis
 # Output: the polynomial of ore with all coefficients in normal form
 #
-normalize_ore := proc(ore, x, basis, pars)
+normalize_ore := proc (ore, x, basis, pars)
     local coefs, i, Dx;
     coefs := PolynomialTools[CoefficientList](OreTools[Converters][FromOrePolyToPoly](ore, Dx), Dx);
     coefs := [seq([PolynomialTools[CoefficientList](numer(coefs[i]), x), PolynomialTools[CoefficientList](denom(coefs[i]), x)], i=1..nops(coefs))];
@@ -29,17 +66,20 @@ end proc;
 #  basis: a basis of an ideal
 #  depth: maximum number of ideal to process
 #  default: default value for the gcd
-#  fgb: use FGb for Groebner basis computations
 # Output: a gcd that is different from 1 if possible and a Groebner basis of the ideal that produces this gcd
 #
-searchideal := proc(R, i, n, x, pars, ineqs, basis, depth, default, fgb:=true)
+searchideal := proc (R, i, n, x, pars, ineqs, basis, depth, default)
     local j, k, i_, Ri, lcoef, b, t, prev;
     if i = n + 1 then
-        return OrePoly(1), [1]
+        if OreTools[Utility][Degree](R[i-1]) = 0 then
+            return OrePoly(1), [1]
+        else
+            return OreTools[MonicAssociate](R[i-1]), [0]
+        end if
     end if;
     # try to cancel R[i] entirely first then try to cancel the j leading terms
     for j in [nops(R[i]), seq(k, k=1..nops(R[i])-1)] do
-        if fgb then
+        if use_FGb then
             b := FGb[fgb_gbasis_elim]([op(basis), op(map(coeffs, map(collect, map(numer, [seq(op(nops(R[i]) - k + 1, R[i]), k=1..j)]), x), x)), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], 0, [seq(t[k], k=1..nops(ineqs))], pars);
         else
             b := Groebner[Basis]([op(basis), op(map(coeffs, map(collect, map(numer, [seq(op(nops(R[i]) - k + 1, R[i]), k=1..j)]), x), x)), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], lexdeg([seq(t[k], k=1..nops(ineqs))], pars));
@@ -84,37 +124,18 @@ end proc;
 #  x: the commutative variable of ore1 and ore2
 #  ineqs: parameters in ore1 and ore2 that must not be canceled
 #  depth: search depth for the ideal
-#  fgb: use FGb in Groebner basis computations
 # Output: a gcd that is different from 1 if possible and a Groebner basis of the ideal that produces this gcd
 #
-gcdideal := proc(ore1, ore2, x, ineqs:={}, basis:=[], depth:=1, fgb:=false)
-    local A, pars, n, R, ideal, gcd, k, t, counter;
-    A := OreTools[SetOreRing](x, 'differential');
-    gcd := OreTools[GCD]['right'](ore1, ore2, A);
+gcdideal := proc (ore1, ore2, A, ineqs:={}, basis:=[], depth:=1)
+    local x, pars, n, R, ideal, gcd, k, t, counter;
+    x := OreTools[Properties][GetVariable](A);
     n, R := op(OreTools[Euclidean]['right'](ore1, ore2, A));
-    print(R);
-    if OreTools[Utility][Degree](gcd) > 0 then
-        # the gcd is different from 1
-        return gcd, [0]
+    if n = 2 then
+        return ore2, [0]
     end if;
     pars := [op((indets({op(ore1)}, 'name') union indets({op(ore2)}, 'name')) minus {x})];
     return searchideal([seq(R[i], i=3..n)], 1, n-2, x, pars, ineqs, [], depth, ore2);
 end proc;
-
-
-gcdorediffeq := proc(ore1, ore2, x)
-    local A, res, c1, c2;
-    A := OreTools[SetOreRing](x, 'differential');
-    res := OreTools[GCD]['right'](ore1, ore2, A);
-    if res = OrePoly(1) then
-        OreTools[ExtendedGCD]['right'](ore1, ore2, A, 'c1', 'c2');
-        c1 := c1[1];
-        c2 := c2[1];
-        res := OreTools[Add](OreTools[Multiply](c1, ore1, A), OreTools[Multiply](c2, ore2, A));
-    end if;
-    return res
-end proc;
-
 
 #diffeqs_table
 # A table indexed by differential equations with values its basis of solutions in the format
@@ -160,11 +181,10 @@ diffeqs_table[_x*(D@@2)(_y)(_x) + (D)(_y)(_x)] := [
 #  g: an algebraic function of x
 #  deqpar: name of possible parameters of deq
 #  ineqs(={}): additional constraints on g
-#  fgb(=false): use FGb instead of Groebner
 # Output: a groebner list of groebner basis of the symmetries and tranformation of LDE
 #
-diffeq_symmetries := proc (LDE, y, x, g, deq, deqpar, ineqs:={}, fgb:=false)
-    local deq1, poly_deq, poly_sym, pars, Dx, sys, basis, t, i, gcd, ideal, ld1, ld2;
+symmetries := proc (LDE, y, x, deq, deqpar, ineqs:={})
+    local deq1, poly_deq, poly_sym, pars, Dx, sys, basis, t, i, gcd, ideal;#, ld1, ld2;
     if type(LDE, 'set') then
         deq1 := op(remove(type, LDE, `=`));
     else
@@ -173,25 +193,21 @@ diffeq_symmetries := proc (LDE, y, x, g, deq, deqpar, ineqs:={}, fgb:=false)
     pars := [op(indets(deq, 'name') minus {y, x})];
     poly_deq := DETools[de2diffop](subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), deq), y(x), [Dx, x]);
     poly_deq := collect(poly_deq/lcoeff(poly_deq, Dx), Dx);
-    ld1 := ldegree(poly_deq, Dx);
-    poly_sym := DETools[de2diffop](gfun[algebraicsubs](deq1, gfun[algfuntoalgeq](g, y(x)), y(x)), y(x), [Dx, x]);
+    poly_sym := DETools[de2diffop](deq1, y(x), [Dx, x]);
     poly_sym := collect(poly_sym/lcoeff(poly_sym, Dx), Dx);
-    ld2 := ldegree(poly_sym, Dx);
-    poly_sym := normal(poly_sym/Dx^min(ld1, ld2));
-    poly_deq := normal(poly_deq/Dxmin(ld1, ld2));
-    gcd, ideal := gcdideal(OreTools[Converters][FromPolyToOrePoly](poly_deq, Dx), OreTools[Converters][FromPolyToOrePoly](poly_sym, Dx), x, ineqs union subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), ineqs), 1);
-    nops(pars), collec(Dx^min(ld1, ld2) * DETools[diffop2de](OreTools[Converters][FromOrePolyToPoly](gcd, Dx), y(x), [Dx, x]), Dx), ideal;
+    gcd, ideal := gcdideal(OreTools[Converters][FromPolyToOrePoly](poly_deq, Dx), OreTools[Converters][FromPolyToOrePoly](poly_sym, Dx), OreTools[SetOreRing](x, 'differential'), ineqs union subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), ineqs), 1);
+    nops(pars), DETools[diffop2de](OreTools[Converters][FromOrePolyToPoly](gcd, Dx), y(x), [Dx, x]), ideal;
 end proc;
 
 
-recognize := proc(LDE, LDE2, g, y, x, ineqs, icspars, fgb:=false)
+recognize := proc (LDE, LDE2, g, y, x, ineqs, icspars)
     local y2, deq, pars, ics, i, t, init_point, basis;
     deq := subs(y=y2, _x=x, LDE2);
     pars := indets(deq, 'name') minus {x, y2};
     #deq := subs(seq(op(i, pars)=deqpar[i], i=1..nops(pars)), deq);
     ics := gfun[poltodiffeq](y(x) - y2(x), [gfun[algebraicsubs](LDE, gfun[algfuntoalgeq](g, y(x)), y(x), {seq((D@@(i-1))(y)(0)=subs(x=0, (D@@(i-1))(g)(x)), i=1..2*PDETools[difforder](LDE))}), {deq, seq((D@@(i-1))(y2)(0)=icspars[i], i=1..PDETools[difforder](deq, x))}], [y(x), y2(x)], y(z));
     ics := map2(op, 2, [op(select(type, ics, `=`))]);
-    if fgb then
+    if use_FGb then
         basis := FGb[fgb_gbasis_elim](ics, 0, [seq(1-t[i]*op(i, ineqs), i=1..nops(ineqs))], [op(indets(ics))]);
     else
         basis := Groebner[Basis](ics, lexdeg([seq(1-t[i]*op(i, ineqs), i=1..nops(ineqs))], [op(indets(ics))]));
@@ -207,7 +223,7 @@ end proc;
 #  x: a formal variable
 #  par: formal parameter name
 #  itype: type of transformation
-# Output: the expression and the system of inequations asociated to itype
+# Output: the expression and the system of inequations associated to itype
 #
 getfunction := proc(x, par, itype)
     local g, dp, dq, sys;
@@ -227,10 +243,166 @@ getfunction := proc(x, par, itype)
     elif type(itype, 'ratpoly') then
         g := itype;
         sys := {resultant(numer(g), denom(g), x)} minus {1}
+    elif type(itype, 'radfun') then
+        g := itype;
+        sys := {}
     else
         return
     end if;
     return g, sys;
+end proc;
+
+
+algeqtoseries := proc (pol, y, x, x0, order:=6)
+    if x0 = infinity then
+        return subs(x=1/x, gfun[algeqtoseries](numer(subs(x=1/x, pol)), x, y, order))
+    end if;
+    return subs(x=x-x0, gfun[algeqtoseries](subs(x=x+x0, pol), x, y, order))
+end proc;
+
+`formal_sol/nt` := proc (f, n)
+    local a, res, g, m;
+    global `DEtools/diffop/x`;
+    if has(f, log(`DEtools/diffop/x`)) then
+        return subs(a=log(`DEtools/diffop/x`), procname(subs(log(`DEtools/diffop/x`)=a, f), n))
+    end if;
+    if type(f, list) then
+        return map(procname, f, n)
+    end if;
+    map(`DEtools/diffop/nmterms_laurent`, indets(f) intersect `DEtools/diffop/set_laurents`, n);
+    g := `DEtools/diffop/subsvalueslaurents`(f);
+    res := 0;
+    m := n;
+    while res = 0 do
+        res := `algcurves/normal_tcoeff`(`algcurves/truncate`(g, m, `DEtools/diffop/x`, []), `DEtools/diffop/x`);
+        m := m + 1
+    end do;
+    return [res, m-1];
+end proc;
+
+#formal_sol
+# Input:
+#  LDE: linear differential equation
+#  y, x: variables of LDE
+#  x0: expansion point
+# Output: the list of the dominant terms of the formal solutions of LDE at x=x0 in the format
+#  [[a, b, c, [d1 d2]], [a', b', c', [d1', d2']], ..., x=p] (where p is x-x0 or 1/x if x0 = infinity)
+#  meaning that the formal solutions at x0 are
+#  a * p^b * ln(p)^c * exp(d1 * p^(-d2)), ...
+#
+formal_sol := proc (LDE, y, x, x0)
+    local L, Dx, a, i, j;
+    L := `DEtools/de2diffop`(LDE, y(x), [Dx, x]);
+    a := `DEtools/diffop/formal_sol`(`DEtools/diffop/l_p`(subs(Dx = `DEtools/diffop/DF`, x = `DEtools/diffop/x`, L), x0), `DEtools/diffop/g_ext`([L, x0]));
+    a := subs(`DEtools/diffop/x`=x, [seq([`formal_sol/nt`(i[1], 1), i[2], `if`(3 < nops(i), i[4], `DEtools/diffop/x`)], i = a)]);
+    a := [seq([seq([coeff(j[2], x, 0), i[1], int((j[2]-coeff(j[2], x, 0))/x, x)], i = j[1])], j = a)];
+    a := subs(`algcurves/g_conversion2`, [seq(op(i), i=a)]);
+    for i from 1 to nops(a) do
+        j := subs(ln(x)=y, a[i][2]);
+        j, a[i][2] := lcoeff(j, y), degree(j, y);
+        if op(0, j) = `*` then
+            if op([2, 0], j) = `^` then
+                a[i][1] := a[i][1] + op([2, 2], j);
+                j := op(1, j)
+            elif op(2, j) = x then
+                a[i][1] := a[i][1] + 1;
+                j := op(1, j)
+            end if
+        elif op(0, j) = `^` then
+            a[i][1] := a[i][1] + op(2, j);
+            j := 1
+        elif j = x then
+            a[i][1] := a[i][1] + 1;
+            j := 1
+        end if;
+        a[i] := [allvalues([j, op(a[i])])];
+        for j from 1 to nops(a[i]) do
+            if op(0, a[i][j][4]) = `*` then
+                a[i][j][4] := [op(a[i][j][4])];
+                a[i][j][4][2] := -op(2, a[i][j][4][2])
+            elif has(a[i][j][4], x) then
+                a[i][j][4] := [1, -op(2, a[i][j][4])];
+            else
+                a[i][j][4] := [0, 0]
+            end if;
+        end do
+    end do;
+    unassign('i');
+    return [seq(op(i), i=a), x = `if`(x0 = infinity, 1/x, x-x0)]
+end proc;
+
+#`formal_sol/prettyprint`
+# Input:
+#  LDE: linear differential equation
+#  y, x: variables of LDE
+#  x0: expansion point
+# Output: the list of the dominant terms of the formal solutions of LDE at x=x0
+#
+`formal_sol/prettyprint` := proc (LDE, y, x, x0)
+    local res, i;
+    res := formal_sol(LDE, y, x, x0);
+    for i from 1 to nops(res)-1 do
+        res[i] := subs(res[-1], res[i][1] * x^res[i][2] * ln(x)^res[i][3] * exp(res[i][4][1]*x^(-res[i][4][2])));
+    end do;
+    return res[..-2];
+end proc;
+
+testg := proc (LDE, y, x, deq, g)
+    local dom1, dom2, tab1, tab2, degs, deg, k, i, j, degcmp, factor1, factor2, branch, poss, t, g2, infin;
+    degcmp := proc(p, q) degree(p, x) >= degree(q, x) end proc;
+    if degree([PDETools[dcoeffs](deq, y(x))][1], x) <> 0 then
+        dom1 := sort(map2(op, [1, 1], factors([PDETools[dcoeffs](LDE, y(x))][1])[2..]), degcmp);
+        dom2 := sort(map2(op, [1, 1], factors([PDETools[dcoeffs](deq, y(x))][1])[2..]), degcmp);
+        print(dom1, dom2);
+        degs := map(degree, dom1, x);
+        if degs <> map(degree, dom2, x) then
+            return false
+        end if;
+        degs := {op(degs)};
+        print(degs);
+        for deg in degs do
+            poss[deg] := {};
+            tab1[deg], dom1 := selectremove((_ -> degree(_, x) = deg), dom1);
+            tab2[deg], dom2 := selectremove((_ -> degree(_, x) = deg), dom2);
+            for factor1 in tab1[deg] do
+                for factor2 in tab2[deg] do
+                    for branch in `algcurves/puiseux`(g, x=RootOf(factor2, x), y, 1) do
+                        poss[deg] := poss[deg] union {numer(evala(subs(x=branch, factor1)))};
+                    end do
+                end do
+            end do
+        end do;
+    else
+        degs := {}
+    end if;
+    infin := false;
+    if infinity in `union`(op(map2(op, 2, [DETools[singularities](deq, y(x))]))) then
+        infin := true;
+        poss[0] := {};
+        g2 := subs(x=0, numer(subs(x=1/x, g)));
+        if degree(g2, y) = 0 then
+            if infinity in `union`(op(map2(op, 2, [DETools[singularities](LDE, y(x))]))) then
+                poss[0] := {0}
+            else
+                poss[0] := {1}
+            end if;
+        elif ldegree(g2, y) > 0 then
+            if 0 in `union`(op(map2(op, 2, [DETools[singularities](LDE, y(x))]))) then
+                poss[0] := {0}
+            else
+                poss[0] := {1}
+            end if;
+        else
+            for factor1 in tab1[1] do
+                poss[0] := poss[0] union {numer(evala(subs(x=RootOf(g2, y)), factor1))}
+            end do
+        end if;
+    end if;
+    if infin then
+        return [seq(poss[j], j=degs), poss[0]]
+    else
+        return [seq(poss[j], j=degs)]
+    end if 
 end proc;
 
 #identities
@@ -239,19 +411,20 @@ end proc;
 #  y, x: the variables of LDE
 #  tab(=[]): a table of LDE
 #  itype(='homography'): either 'homography', 'ratpoly'(dp, dq), 'ratpolyfactor'(dp, dq) or a rational fraction in x
-#  fgb(=false): use FGb instead of Groebner
+#  ineqs(={}): parameters that must not be canceled
 # Output:
 #
-identities := proc(LDE, y, x, tab:=[], itype:='homography', ineqs:={}, fgb:=false)
-    local g, g2, sys, ndeqpar, ics, par, deq, rdeq, rdeq2, deqpar, icspars, gbase, sol, sol2, i, j;
+identities := proc (LDE, y, x, tab:=[], itype:='homography', ineqs:={})
+    local g, g2, sys, ndeqpar, ics, par, deqsub, deq, rdeq, rdeq2, deqpar, icspars, gbase, sol, sol2, i, j;
     g, sys := getfunction(x, par, itype);
     if type(LDE, 'set') then
         deq := op(remove(type, LDE, `=`));
     else
         deq := LDE
     end if;
+    deqsub := gfun[algebraicsubs](deq, gfun[algfuntoalgeq](g, y(x)), y(x));
     for deq in {deq, op(tab)} do
-        ndeqpar, rdeq, gbase := diffeq_symmetries(LDE, y, x, g, deq, deqpar, sys union ineqs, fgb);
+        ndeqpar, rdeq, gbase := symmetries(deqsub, y, x, deq, deqpar, sys union ineqs);
         print(deq, rdeq, gbase);
         for sol in [solve(gbase, {seq(deqpar[i], i=1..ndeqpar)} union indets(LDE, 'name') union indets(g) minus {x})] do
             sol := [allvalues(sol)][1];
@@ -269,3 +442,5 @@ identities := proc(LDE, y, x, tab:=[], itype:='homography', ineqs:={}, fgb:=fals
         end do
     end do
 end proc;
+
+end module;
