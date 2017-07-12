@@ -31,7 +31,7 @@ end proc;
 ModulelLoad();
 
 force_export := proc ()
-    return [searchideal, normalize_ore, puiseux_coeffs, `formal_sol/nt`]
+    return [searchideal, normalize_ore, algeqtoseries, puiseux_coeffs, `formal_sol/nt`]
 end proc;
     
 
@@ -280,7 +280,6 @@ puiseux_coeffs := proc (Q, x)
     return m, PolynomialTools[CoefficientList](`+`(op(ops)), x)
 end proc;
 
-
 #formal_sol
 # Input:
 #  LDE: linear differential equation
@@ -300,21 +299,21 @@ formal_sol := proc (LDE, y, x, x0)
     a := [seq(subs(x=RootOf(j[-1], y), j[1..-2]), j = a)];
     a := [seq(`DEtools/index_them`(j, [args]), j = subs(`algcurves/g_conversion2`, convert([seq(`DEtools/index_them`(j, [args]), j = a)], 'radical')))];
     for i from 1 to nops(a) do
-        j := subs(ln(x)=y, a[i][2]);
+        j := eval(subs(ln=(_ -> y), a[i][2]));
         j, a[i][2] := lcoeff(j, y), degree(j, y);
         if op(0, j) = `*` then
             if op([2, 0], j) = `^` then
-                a[i][1] := a[i][1] + op([2, 2], j);
+                a[i][1] := a[i][1] * x^op([2, 2], j);
                 j := op(1, j)
             elif op(2, j) = x then
-                a[i][1] := a[i][1] + 1;
+                a[i][1] := a[i][1] * x;
                 j := op(1, j)
             end if
         elif op(0, j) = `^` then
-            a[i][1] := a[i][1] + op(2, j);
+            a[i][1] := a[i][1] * x^op(2, j);
             j := 1
         elif j = x then
-            a[i][1] := a[i][1] + 1;
+            a[i][1] := a[i][1] * x;
             j := 1
         end if;
         a[i][1] := evala(a[i][1]);
@@ -325,7 +324,7 @@ formal_sol := proc (LDE, y, x, x0)
         else
             a[i][1] := op(2, a[i][1])
         end if;
-        a[i][3] := [puiseux_coeffs(evala(a[i][3]), x)];
+        a[i][3] := puiseux_coeffs(evala(a[i][3]), x);
         a[i] := [allvalues([j, op(a[i])])];
     end do;
     unassign('i');
@@ -348,6 +347,7 @@ end proc;
     return res[..-2];
 end proc;
 
+
 testg := proc (LDE, y, x, deq, g)
     local dom1, dom2, tab1, tab2, degs, deg, k, i, j, degcmp, factor1, factor2, branch, poss, t, g2, infin;
     degcmp := proc(p, q) degree(p, x) >= degree(q, x) end proc;
@@ -365,10 +365,12 @@ testg := proc (LDE, y, x, deq, g)
             poss[deg] := {};
             tab1[deg], dom1 := selectremove((_ -> degree(_, x) = deg), dom1);
             tab2[deg], dom2 := selectremove((_ -> degree(_, x) = deg), dom2);
-            for factor1 in tab1[deg] do
-                for factor2 in tab2[deg] do
+            for i from 1 to nops(tab1[deg]) do
+                factor1 := tab1[deg][i];
+                for j from 1 to nops(tab2[deg]) do
+                    factor2 := tab2[deg][j];
                     for branch in `algcurves/puiseux`(g, x=RootOf(factor2, x), y, 1) do
-                        poss[deg] := poss[deg] union {numer(evala(subs(x=branch, factor1)))};
+                        poss[deg] := poss[deg] union {[i, j, numer(evala(subs(x=branch, factor1)))]};
                     end do
                 end do
             end do
@@ -400,9 +402,9 @@ testg := proc (LDE, y, x, deq, g)
         end if;
     end if;
     if infin then
-        return [seq(poss[j], j=degs), poss[0]]
+        return [seq(poss[k], k=degs), poss[0]]
     else
-        return [seq(poss[j], j=degs)]
+        return [seq(poss[k], k=degs)]
     end if 
 end proc;
 
