@@ -18,6 +18,7 @@ local
     searchideal,
     normalize_ore,
     algeqtoseries,
+    puiseux_coeffs,
     `formal_sol/nt`,
     ModulelLoad;
 
@@ -30,7 +31,7 @@ end proc;
 ModulelLoad();
 
 force_export := proc ()
-    return [searchideal, normalize_ore, `formal_sol/nt`]
+    return [searchideal, normalize_ore, puiseux_coeffs, `formal_sol/nt`]
 end proc;
     
 
@@ -218,41 +219,6 @@ recognize := proc (LDE, LDE2, g, y, x, ineqs, icspars)
     return basis;
 end proc;
 
-#getfunction
-# Input:
-#  x: a formal variable
-#  par: formal parameter name
-#  itype: type of transformation
-# Output: the expression and the system of inequations associated to itype
-#
-getfunction := proc(x, par, itype)
-    local g, dp, dq, sys;
-    if itype = 'homography' then
-        g := (par[1,1]*x+par[1,2])/(par[2,1]*x+par[2,2]);
-        sys := {resultant(numer(g), denom(g), x)}
-    elif op(0, itype) = 'ratpoly' then
-        dp := op(1, itype);
-        dq := op(2, itype);
-        g := par[1] * `+`(seq(par[i+1]*x^(i-1), i=1..dp), x^dp)/`+`(seq(par[i+1+dp]*x^(i-1), i=1..dq), x^dq);
-        sys := {resultant(numer(g), denom(g), x), par[1]} minus {1};
-    elif op(0, itype) = 'ratpolyfactor' then
-        dp := op(1, itype);
-        dq := op(2, itype);
-        g := par[1] * `*`(seq(x - par[i+1], i=1..dp))/`*`(seq(x - par[i+1+dp], i=1..dq));
-        sys := {seq(seq(par[i+1] - par[j+1+dp], j=1..dq), i=1..dp)}
-    elif type(itype, 'ratpoly') then
-        g := itype;
-        sys := {resultant(numer(g), denom(g), x)} minus {1}
-    elif type(itype, 'radfun') then
-        g := itype;
-        sys := {}
-    else
-        return
-    end if;
-    return g, sys;
-end proc;
-
-
 algeqtoseries := proc (pol, y, x, x0, order:=6)
     if x0 = infinity then
         return subs(x=1/x, gfun[algeqtoseries](numer(subs(x=1/x, pol)), x, y, order))
@@ -280,23 +246,59 @@ end proc;
     return [res, m-1];
 end proc;
 
+#puiseux_coeffs
+# Input:
+#  Q: a sum of terms of the form a/x^(k/l) where k >= 0
+#  x: the variable of Q
+# Output: A list of coefficient of a polynomial P and an integer m such that Q(x) = P(1/x^(1/m))
+#
+puiseux_coeffs := proc (Q, x)
+    local i, j, m, P, ops;
+    if Q = 0 then
+        return [1, []];
+    end if;
+    if op(0, Q) = `*` or op(0, Q) = `^` then
+        ops := [Q]
+    else
+        ops := [op(Q)]
+    end if;
+    m := 1;
+    for i from 1 to nops(ops) do
+        if op(0, ops[i]) = `*` then
+            m := ilcm(m, denom(op([2, 2], ops[i])))
+        else
+            m := ilcm(m, denom(op(2, ops[i])))
+        end if
+    end do;
+    for i from 1 to nops(ops) do
+        if op(0, ops[i]) = `*` then
+           ops[i] := subsop(2=x^(-numer(op([2, 2], ops[i])) * (m/denom(op([2, 2], ops[i])))), ops[i])
+        else
+           ops[i] := x^(-numer(op(2, ops[i])) * (m/denom(op(2, ops[i]))))
+        end if
+    end do;
+    return m, PolynomialTools[CoefficientList](`+`(op(ops)), x)
+end proc;
+
+
 #formal_sol
 # Input:
 #  LDE: linear differential equation
 #  y, x: variables of LDE
 #  x0: expansion point
 # Output: the list of the dominant terms of the formal solutions of LDE at x=x0 in the format
-#  [[a, b, c, [d1 d2]], [a', b', c', [d1', d2']], ..., x=p] (where p is x-x0 or 1/x if x0 = infinity)
+#  [[a, b, c, [d1, [d20, ...]]], [a', b', c', [d1', [d20', ...]]], ..., x=p] (where p is x-x0 or 1/x if x0 = infinity)
 #  meaning that the formal solutions at x0 are
-#  a * p^b * ln(p)^c * exp(d1 * p^(-d2)), ...
+#  a * p^b * ln(p)^c * exp(... + d2i/p^(i/d1) + ...), ...
 #
 formal_sol := proc (LDE, y, x, x0)
     local L, Dx, a, i, j;
     L := `DEtools/de2diffop`(LDE, y(x), [Dx, x]);
     a := `DEtools/diffop/formal_sol`(`DEtools/diffop/l_p`(subs(Dx = `DEtools/diffop/DF`, x = `DEtools/diffop/x`, L), x0), `DEtools/diffop/g_ext`([L, x0]));
     a := subs(`DEtools/diffop/x`=x, [seq([`formal_sol/nt`(i[1], 1), i[2], `if`(3 < nops(i), i[4], `DEtools/diffop/x`)], i = a)]);
-    a := [seq([seq([coeff(j[2], x, 0), i[1], int((j[2]-coeff(j[2], x, 0))/x, x)], i = j[1])], j = a)];
-    a := subs(`algcurves/g_conversion2`, [seq(op(i), i=a)]);
+    a := [seq(seq([x^coeff(j[2], x, 0), i[1], int((j[2]-coeff(j[2], x, 0))/x, x), subs(x=y, j[3]) = `if`(x0 = infinity, 1/x, x-x0)], i = j[1]), j = a)];
+    a := [seq(subs(x=RootOf(j[-1], y), j[1..-2]), j = a)];
+    a := [seq(`DEtools/index_them`(j, [args]), j = subs(`algcurves/g_conversion2`, convert([seq(`DEtools/index_them`(j, [args]), j = a)], 'radical')))];
     for i from 1 to nops(a) do
         j := subs(ln(x)=y, a[i][2]);
         j, a[i][2] := lcoeff(j, y), degree(j, y);
@@ -315,17 +317,16 @@ formal_sol := proc (LDE, y, x, x0)
             a[i][1] := a[i][1] + 1;
             j := 1
         end if;
+        a[i][1] := evala(a[i][1]);
+        if type(a[i][1], 'symbol') then
+            a[i][1] := 1
+        elif type(a[i][1], 'constant') then
+            j, a[i][1] := j*a[i][1], 0
+        else
+            a[i][1] := op(2, a[i][1])
+        end if;
+        a[i][3] := [puiseux_coeffs(evala(a[i][3]), x)];
         a[i] := [allvalues([j, op(a[i])])];
-        for j from 1 to nops(a[i]) do
-            if op(0, a[i][j][4]) = `*` then
-                a[i][j][4] := [op(a[i][j][4])];
-                a[i][j][4][2] := -op(2, a[i][j][4][2])
-            elif has(a[i][j][4], x) then
-                a[i][j][4] := [1, -op(2, a[i][j][4])];
-            else
-                a[i][j][4] := [0, 0]
-            end if;
-        end do
     end do;
     unassign('i');
     return [seq(op(i), i=a), x = `if`(x0 = infinity, 1/x, x-x0)]
@@ -339,10 +340,10 @@ end proc;
 # Output: the list of the dominant terms of the formal solutions of LDE at x=x0
 #
 `formal_sol/prettyprint` := proc (LDE, y, x, x0)
-    local res, i;
+    local res, i, j;
     res := formal_sol(LDE, y, x, x0);
     for i from 1 to nops(res)-1 do
-        res[i] := subs(res[-1], res[i][1] * x^res[i][2] * ln(x)^res[i][3] * exp(res[i][4][1]*x^(-res[i][4][2])));
+        res[i] := subs(res[-1], res[i][1] * x^res[i][2] * ln(x)^res[i][3] * exp(add(seq(res[i][4][2][j]/x^((j-1)/res[i][4][1]), j=1..nops(res[i][4][2])))));
     end do;
     return res[..-2];
 end proc;
@@ -403,6 +404,40 @@ testg := proc (LDE, y, x, deq, g)
     else
         return [seq(poss[j], j=degs)]
     end if 
+end proc;
+
+#getfunction
+# Input:
+#  x: a formal variable
+#  par: formal parameter name
+#  itype: type of transformation
+# Output: the expression and the system of inequations associated to itype
+#
+getfunction := proc(x, par, itype)
+    local g, dp, dq, sys;
+    if itype = 'homography' then
+        g := (par[1,1]*x+par[1,2])/(par[2,1]*x+par[2,2]);
+        sys := {resultant(numer(g), denom(g), x)}
+    elif op(0, itype) = 'ratpoly' then
+        dp := op(1, itype);
+        dq := op(2, itype);
+        g := par[1] * `+`(seq(par[i+1]*x^(i-1), i=1..dp), x^dp)/`+`(seq(par[i+1+dp]*x^(i-1), i=1..dq), x^dq);
+        sys := {resultant(numer(g), denom(g), x), par[1]} minus {1};
+    elif op(0, itype) = 'ratpolyfactor' then
+        dp := op(1, itype);
+        dq := op(2, itype);
+        g := par[1] * `*`(seq(x - par[i+1], i=1..dp))/`*`(seq(x - par[i+1+dp], i=1..dq));
+        sys := {seq(seq(par[i+1] - par[j+1+dp], j=1..dq), i=1..dp)}
+    elif type(itype, 'ratpoly') then
+        g := itype;
+        sys := {resultant(numer(g), denom(g), x)} minus {1}
+    elif type(itype, 'radfun') then
+        g := itype;
+        sys := {}
+    else
+        return
+    end if;
+    return g, sys;
 end proc;
 
 #identities
