@@ -9,7 +9,7 @@ export
     diffeqs_table,
     formal_sol,
     `formal_sol/prettyprint`,
-    product,
+    permutations,
     testg,
     force_export,
     # module variables
@@ -20,6 +20,7 @@ local
     normalize_ore,
     algeqtoseries,
     puiseux_coeffs,
+    product,
     `formal_sol/nt`,
     ModulelLoad;
 
@@ -349,17 +350,34 @@ end proc;
 end proc;
 
 
-product := proc (l)
+product := proc (l, off:=0)
     local res, i, j, k;
-    res := {seq([[i], {op(i, l[1])[4]}], i=1..nops(l[1]))};
+    res := {seq([[i], {`if`(off=0, op(i, l[1]), op(i, l[1])[off])}], i=1..nops(l[1]))};
     for k from 2 to nops(l) do
-        res := {seq(seq([[op(op(i, res)[1]), j], {op(op(i, res)[2]), op(j, l[k])[4]}], j=1..nops(l[k])), i=1..nops(res))}
+        res := {seq(seq([[op(op(i, res)[1]), j], {op(op(i, res)[2]), `if`(off=0, op(j, l[k]), op(j, l[k])[off])}], j=1..nops(l[k])), i=1..nops(res))}
     end do;
     return res
 end proc;
 
-testg := proc (LDE, y, x, deq, g)
-    local dom1, dom2, tab1, tab2, degs, deg, LDE2, deq2, A, k, i, j, l, degcmp, ind, factor1, factor2, branch, poss, p, basis, sing, s, s2, fs1, fs2, tay, tay0, t, g2, pol, pol2, comp;
+permutations := proc (l, i:=1)
+    local res, j, k, p;
+    if i = nops(l) then
+        return [[l[i]]]
+    end if;
+    res := permutations(l, i+1);
+    return [seq(seq([seq(`if`(k<j, res[p][k], `if`(k=j, l[i], res[p][k-1])), k=1..nops(res[p])+1)], j=1..nops(res[p])+1), p=1..nops(res))]
+end proc;
+
+#solve_singularities
+# Input:
+#  LDE: a linear differential equation
+#  y, x: the variables of LDE
+#  deq: a linear differential equation in x and y
+#  g: an algebraic function given as a polynomial in y and x
+#  ineqs(={}): polynomial in the parameters that must no be canceled
+#
+solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
+    local dom1, dom2, tab1, tab2, degs, deg, LDE2, deq2, A, k, i, j, l, m, degcmp, ind, factor1, factor2, branch, poss, p, basis, sing, s, s2, fs1, fs2, tay, tay0, t, g2, pol, pol2, comp;
     degcmp := proc(p, q) degree(p, x) >= degree(q, x) end proc;
     if degree([PDETools[dcoeffs](deq, y(x))][1], x) <> 0 then
         dom1 := sort(map2(op, 1, factors([PDETools[dcoeffs](LDE, y(x))][1])[2..][1]), degcmp);
@@ -397,7 +415,6 @@ testg := proc (LDE, y, x, deq, g)
         degs := degs union {0};
         poss[0] := {};
         g2 := subs(x=0, numer(subs(x=1/x, g)));
-        print(g2);
         if degree(g2, y) = 0 or subs(x=0, lcoeff(g2, y)) = 0 then
             if infinity in `union`(op(map2(op, 2, [DETools[singularities](LDE, y(x))]))) then
                 poss[0] := {[0, 0, 0, 0]}
@@ -420,9 +437,7 @@ testg := proc (LDE, y, x, deq, g)
         end if;
     end if;
     degs := [op(degs)];
-    print(poss);
-    poss := product([seq(poss[k], k=degs)]);
-    print(poss);
+    poss := [op(product([seq(poss[k], k=degs)], 4))];
     sing := {};
     ind := [op(indets(LDE, 'name') union indets(deq, 'name') union indets(g, 'name'))];
     A := OreTools[SetOreRing](x, 'differential');
@@ -430,58 +445,61 @@ testg := proc (LDE, y, x, deq, g)
         if deg <> 0 then
             for i from 1 to nops(tab1[deg]) do
                 factor1 := tab1[deg][i];
-                print(factor1);
-                print(g);
                 try
                     sing := sing union {[[deg, i], RootOf(subs(y=RootOf(factor1, x), g), x)]}
                 catch: end try
             end do
         else
-            sing := sing union {[0, infinity]}
+            sing := sing union {[[0, 0], infinity]}
         end if
     end do;
-    for p in poss do
-        print(p);
+    for i from 1 to nops(poss) do
+        p := poss[i];
         if use_FGb then
-            basis := FGb[fgb_gbasis_elim]([op(p[2])], 0, [], ind)
+            basis := FGb[fgb_gbasis_elim]([op(p[2]), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], 0, [seq(t[k], k=1..nops(ineqs))], ind)
         else
             basis := [1]
         end if;
-        if not 1 in basis then
-            g2 := PolynomialTools[CoefficientList](g, y);
-            g2 := map(PolynomialTools[CoefficientList], g2, x);
-            for i from 1 to nops(g2) do
-                g2[i] := PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], g2[i], basis, tdeg(op(ind))), x)
-            end do;
-            g2 := PolynomialTools[FromCoefficientList](g2, y);
-            LDE2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](LDE, y, A), x, basis, ind), y, A);
-            deq2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](deq, y, A), x, basis, ind), y, A);
-            for s in sing do
-                if type(s[2], 'RootOf') then
-                    s2 := RootOf(PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], PolynomialTools[CoefficientList](op(1, s[2]), _Z), basis, tdeg(op(ind))), x), x)
-                elif type(s[2], 'polynom') then
-                    s2 := Groebner[NormalForm](s[2], basis, tdeg(op(ind)))
-                elif type(s[2], 'ratpoly') then
-                    s2 := (Groebner[NormalForm](numer(s[2]), basis, tdeg(op(ind))))/(Groebner[NormalForm](denom(s[2]), basis, tdeg(op(ind))))
+        poss[i] := [op(poss[i]), basis];
+        g2 := PolynomialTools[CoefficientList](g, y);
+        g2 := map(PolynomialTools[CoefficientList], g2, x);
+        for j from 1 to nops(g2) do
+            g2[j] := PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], g2[j], basis, tdeg(op(ind))), x)
+        end do;
+        g2 := PolynomialTools[FromCoefficientList](g2, y);
+        LDE2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](LDE, y, A), x, basis, ind), y, A);
+        deq2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](deq, y, A), x, basis, ind), y, A);
+        for s in sing do
+            if ldegree(g2, y) <> 0 then
+                break
+            end if;
+            if s[2] = infinity then
+                s2 := s[2];
+            elif type(s[2], 'RootOf') then
+                s2 := RootOf(PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], PolynomialTools[CoefficientList](op(1, s[2]), _Z), basis, tdeg(op(ind))), x), x)
+            elif type(s[2], 'polynom') then
+                s2 := Groebner[NormalForm](s[2], basis, tdeg(op(ind)))
+            elif type(s[2], 'ratpoly') then
+                pol := Groebner[NormalForm](denom(s[2]), basis, tdeg(op(ind)));
+                if pol = 0 then
+                    s2 := infinity
+                else
+                    s2 := (Groebner[NormalForm](numer(s[2]), basis, tdeg(op(ind))))/pol
                 end if;
-                print(p, basis);
-                print(s2);
-                tay := convert(eval(subs(O=(_->0), algeqtoseries(g2, y, x, s2, 2)))[1], 'polynom');
-                tay := subs(x=`if`(s2 = infinity, 1/x, x+s2), tay);
-                if ldegree(tay, x) = 0 then
-                    tay := tay - subs(x=0, tay);
-                end if;
-                deg := ldegree(tay, x);
-                tay := tcoeff(tay, x);
-                fs1[s[1]] := formal_sol(LDE2, y, x, `if`(s[1]=0, infinity, RootOf(tab1[s[1][1]][s[1][2]], x)));
-                fs1[s[1]][2] := fs1[s[1]][2]*deg;
-                fs2[s[1]] := formal_sol(deq2, y, x, s2);
-                print(s2, fs2[s[1]]);
-                comp[s[1]] := [fs1[s[1]][2] - fs2[s[1]][2], fs1[s[1]][3] - fs2[s[1]][3]]; 
-            end do
-        end if
+            end if;
+            tay := convert(eval(subs(O=(_->0), algeqtoseries(g2, y, x, s2, 2)))[1], 'polynom');
+            tay := subs(x=`if`(s2 = infinity, 1/x, x+s2), tay);
+            if ldegree(tay, x) = 0 then
+                tay := tay - subs(x=0, tay);
+            end if;
+            deg := ldegree(tay, x);
+            tay := tcoeff(tay, x);
+            fs1[s[1]] := formal_sol(LDE2, y, x, `if`(s[1][1]=0, infinity, RootOf(tab1[s[1][1]][s[1][2]], x)));
+            fs1[s[1]][2] := fs1[s[1]][2]*deg;
+            comp[p[1]][s[1]] := {seq([fs1[s[1]][1][2] - k[1][2], fs1[s[1]][1][3] - k[1][3]], k=permutations(formal_sol(deq2, y, x, s2)[..-2]))};
+        end do
     end do;
-    return poss, sing, [seq(comp[k[1]], k=sing)];
+    return poss, [seq([seq(`if`(k[1] in [indices(comp, 'nolist')], comp[k[1]][m[1]], NULL), m=sing)], k=poss)];
 end proc;
 
 #getfunction
