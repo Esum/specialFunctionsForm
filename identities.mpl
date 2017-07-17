@@ -9,6 +9,7 @@ export
     diffeqs_table,
     formal_sol,
     `formal_sol/prettyprint`,
+    product,
     testg,
     force_export,
     # module variables
@@ -255,7 +256,7 @@ end proc;
 puiseux_coeffs := proc (Q, x)
     local i, j, m, P, ops;
     if Q = 0 then
-        return [1, []];
+        return 1, [];
     end if;
     if op(0, Q) = `*` or op(0, Q) = `^` then
         ops := [Q]
@@ -296,7 +297,7 @@ formal_sol := proc (LDE, y, x, x0)
     a := `DEtools/diffop/formal_sol`(`DEtools/diffop/l_p`(subs(Dx = `DEtools/diffop/DF`, x = `DEtools/diffop/x`, L), x0), `DEtools/diffop/g_ext`([L, x0]));
     a := subs(`DEtools/diffop/x`=x, [seq([`formal_sol/nt`(i[1], 1), i[2], `if`(3 < nops(i), i[4], `DEtools/diffop/x`)], i = a)]);
     a := [seq(seq([x^coeff(j[2], x, 0), i[1], int((j[2]-coeff(j[2], x, 0))/x, x), subs(x=y, j[3]) = `if`(x0 = infinity, 1/x, x-x0)], i = j[1]), j = a)];
-    a := [seq(subs(x=RootOf(j[-1], y), j[1..-2]), j = a)];
+    a := subs(x=`if`(x0 = infinity, 1/x, x), [seq(subs(x=RootOf(j[-1], y), j[1..-2]), j = a)]);
     a := [seq(`DEtools/index_them`(j, [args]), j = subs(`algcurves/g_conversion2`, convert([seq(`DEtools/index_them`(j, [args]), j = a)], 'radical')))];
     for i from 1 to nops(a) do
         j := eval(subs(ln=(_ -> y), a[i][2]));
@@ -324,7 +325,7 @@ formal_sol := proc (LDE, y, x, x0)
         else
             a[i][1] := op(2, a[i][1])
         end if;
-        a[i][3] := puiseux_coeffs(evala(a[i][3]), x);
+        a[i][3] := [puiseux_coeffs(expand(evala(a[i][3])), x)];
         a[i] := [allvalues([j, op(a[i])])];
     end do;
     unassign('i');
@@ -348,19 +349,26 @@ end proc;
 end proc;
 
 
+product := proc (l)
+    local res, i, j, k;
+    res := {seq([[i], {op(i, l[1])[4]}], i=1..nops(l[1]))};
+    for k from 2 to nops(l) do
+        res := {seq(seq([[op(op(i, res)[1]), j], {op(op(i, res)[2]), op(j, l[k])[4]}], j=1..nops(l[k])), i=1..nops(res))}
+    end do;
+    return res
+end proc;
+
 testg := proc (LDE, y, x, deq, g)
-    local dom1, dom2, tab1, tab2, degs, deg, k, i, j, degcmp, factor1, factor2, branch, poss, t, g2, infin;
+    local dom1, dom2, tab1, tab2, degs, deg, LDE2, deq2, A, k, i, j, l, degcmp, ind, factor1, factor2, branch, poss, p, basis, sing, s, s2, fs1, fs2, tay, tay0, t, g2, pol, pol2, comp;
     degcmp := proc(p, q) degree(p, x) >= degree(q, x) end proc;
     if degree([PDETools[dcoeffs](deq, y(x))][1], x) <> 0 then
-        dom1 := sort(map2(op, [1, 1], factors([PDETools[dcoeffs](LDE, y(x))][1])[2..]), degcmp);
-        dom2 := sort(map2(op, [1, 1], factors([PDETools[dcoeffs](deq, y(x))][1])[2..]), degcmp);
-        print(dom1, dom2);
+        dom1 := sort(map2(op, 1, factors([PDETools[dcoeffs](LDE, y(x))][1])[2..][1]), degcmp);
+        dom2 := sort(map2(op, 1, factors([PDETools[dcoeffs](deq, y(x))][1])[2..][1]), degcmp);
         degs := map(degree, dom1, x);
         if degs <> map(degree, dom2, x) then
             return false
         end if;
         degs := {op(degs)};
-        print(degs);
         for deg in degs do
             poss[deg] := {};
             tab1[deg], dom1 := selectremove((_ -> degree(_, x) = deg), dom1);
@@ -369,8 +377,15 @@ testg := proc (LDE, y, x, deq, g)
                 factor1 := tab1[deg][i];
                 for j from 1 to nops(tab2[deg]) do
                     factor2 := tab2[deg][j];
-                    for branch in `algcurves/puiseux`(g, x=RootOf(factor2, x), y, 1) do
-                        poss[deg] := poss[deg] union {[i, j, numer(evala(subs(x=branch, factor1)))]};
+                    for l from 1 to deg do
+                        for branch in `algcurves/puiseux`(g, x=RootOf(factor2, x, 'index'=l), y, 1) do
+                            pol := numer(evala(subs(x=branch, factor1)));
+                            for pol in [allvalues(pol)] do
+                                for pol in factors(pol)[2] do
+                                    poss[deg] := poss[deg] union {[deg, i, j, pol[1]]}
+                                end do
+                            end do
+                        end do
                     end do
                 end do
             end do
@@ -378,34 +393,95 @@ testg := proc (LDE, y, x, deq, g)
     else
         degs := {}
     end if;
-    infin := false;
     if infinity in `union`(op(map2(op, 2, [DETools[singularities](deq, y(x))]))) then
-        infin := true;
+        degs := degs union {0};
         poss[0] := {};
         g2 := subs(x=0, numer(subs(x=1/x, g)));
-        if degree(g2, y) = 0 then
+        print(g2);
+        if degree(g2, y) = 0 or subs(x=0, lcoeff(g2, y)) = 0 then
             if infinity in `union`(op(map2(op, 2, [DETools[singularities](LDE, y(x))]))) then
-                poss[0] := {0}
+                poss[0] := {[0, 0, 0, 0]}
             else
-                poss[0] := {1}
+                poss[0] := {[0, 0, 0, 1]}
             end if;
         elif ldegree(g2, y) > 0 then
             if 0 in `union`(op(map2(op, 2, [DETools[singularities](LDE, y(x))]))) then
-                poss[0] := {0}
+                poss[0] := {[0, 0, 0, 0]}
             else
-                poss[0] := {1}
+                poss[0] := {[0, 0, 0, 1]}
             end if;
         else
             for factor1 in tab1[1] do
-                poss[0] := poss[0] union {numer(evala(subs(x=RootOf(g2, y)), factor1))}
+                pol := numer(evala(subs(x=RootOf(g2, y), factor1)));
+                for pol in factors(pol)[2] do
+                    poss[0] := poss[0] union {[0, 0, 0, pol[1]]}
+                end do
             end do
         end if;
     end if;
-    if infin then
-        return [seq(poss[k], k=degs), poss[0]]
-    else
-        return [seq(poss[k], k=degs)]
-    end if 
+    degs := [op(degs)];
+    print(poss);
+    poss := product([seq(poss[k], k=degs)]);
+    print(poss);
+    sing := {};
+    ind := [op(indets(LDE, 'name') union indets(deq, 'name') union indets(g, 'name'))];
+    A := OreTools[SetOreRing](x, 'differential');
+    for deg in degs do
+        if deg <> 0 then
+            for i from 1 to nops(tab1[deg]) do
+                factor1 := tab1[deg][i];
+                print(factor1);
+                print(g);
+                try
+                    sing := sing union {[[deg, i], RootOf(subs(y=RootOf(factor1, x), g), x)]}
+                catch: end try
+            end do
+        else
+            sing := sing union {[0, infinity]}
+        end if
+    end do;
+    for p in poss do
+        print(p);
+        if use_FGb then
+            basis := FGb[fgb_gbasis_elim]([op(p[2])], 0, [], ind)
+        else
+            basis := [1]
+        end if;
+        if not 1 in basis then
+            g2 := PolynomialTools[CoefficientList](g, y);
+            g2 := map(PolynomialTools[CoefficientList], g2, x);
+            for i from 1 to nops(g2) do
+                g2[i] := PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], g2[i], basis, tdeg(op(ind))), x)
+            end do;
+            g2 := PolynomialTools[FromCoefficientList](g2, y);
+            LDE2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](LDE, y, A), x, basis, ind), y, A);
+            deq2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](deq, y, A), x, basis, ind), y, A);
+            for s in sing do
+                if type(s[2], 'RootOf') then
+                    s2 := RootOf(PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], PolynomialTools[CoefficientList](op(1, s[2]), _Z), basis, tdeg(op(ind))), x), x)
+                elif type(s[2], 'polynom') then
+                    s2 := Groebner[NormalForm](s[2], basis, tdeg(op(ind)))
+                elif type(s[2], 'ratpoly') then
+                    s2 := (Groebner[NormalForm](numer(s[2]), basis, tdeg(op(ind))))/(Groebner[NormalForm](denom(s[2]), basis, tdeg(op(ind))))
+                end if;
+                print(p, basis);
+                print(s2);
+                tay := convert(eval(subs(O=(_->0), algeqtoseries(g2, y, x, s2, 2)))[1], 'polynom');
+                tay := subs(x=`if`(s2 = infinity, 1/x, x+s2), tay);
+                if ldegree(tay, x) = 0 then
+                    tay := tay - subs(x=0, tay);
+                end if;
+                deg := ldegree(tay, x);
+                tay := tcoeff(tay, x);
+                fs1[s[1]] := formal_sol(LDE2, y, x, `if`(s[1]=0, infinity, RootOf(tab1[s[1][1]][s[1][2]], x)));
+                fs1[s[1]][2] := fs1[s[1]][2]*deg;
+                fs2[s[1]] := formal_sol(deq2, y, x, s2);
+                print(s2, fs2[s[1]]);
+                comp[s[1]] := [fs1[s[1]][2] - fs2[s[1]][2], fs1[s[1]][3] - fs2[s[1]][3]]; 
+            end do
+        end if
+    end do;
+    return poss, sing, [seq(comp[k[1]], k=sing)];
 end proc;
 
 #getfunction
