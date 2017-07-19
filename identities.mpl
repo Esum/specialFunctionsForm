@@ -21,6 +21,7 @@ local
     puiseux_coeffs,
     permutations,
     product,
+    gcdlist,
     `formal_sol/nt`,
     ModulelLoad;
 
@@ -136,7 +137,7 @@ gcdideal := proc (ore1, ore2, A, ineqs:={}, depth:=1, basis:=[])
     if n = 2 then
         return ore2, [0]
     end if;
-    pars := [op((indets({op(ore1)}, 'name') union indets({op(ore2)}, 'name')) minus {x})];
+    pars := [op((indets({op(ore1)}, 'name') union indets({op(ore2)}, 'name') union indets(ineqs)) minus {x})];
     return searchideal([seq(R[i], i=3..n)], 1, n-2, x, pars, ineqs, basis, depth, ore2);
 end proc;
 
@@ -203,22 +204,49 @@ symmetries := proc (LDE, y, x, deq, ineqs:={}, basis:=[])
 end proc;
 
 
+#recognize
+# Input:
+#  LDE: a linear differential equation
+#  LDE2: a linear differential equation
+#  g: an algebraic function
+#  y, x: the variables of LDE and LDE2
+# Output: 
+#
 recognize := proc (LDE, LDE2, g, y, x, ineqs, icspars)
-    local y2, deq, pars, ics, i, t, init_point, basis;
-    deq := subs(y=y2, _x=x, LDE2);
-    pars := indets(deq, 'name') minus {x, y2};
-    #deq := subs(seq(op(i, pars)=deqpar[i], i=1..nops(pars)), deq);
-    ics := gfun[poltodiffeq](y(x) - y2(x), [gfun[algebraicsubs](LDE, gfun[algfuntoalgeq](g, y(x)), y(x), {seq((D@@(i-1))(y)(0)=subs(x=0, (D@@(i-1))(g)(x)), i=1..2*PDETools[difforder](LDE))}), {deq, seq((D@@(i-1))(y2)(0)=icspars[i], i=1..PDETools[difforder](deq, x))}], [y(x), y2(x)], y(z));
-    ics := map2(op, 2, [op(select(type, ics, `=`))]);
-    if use_FGb then
-        basis := FGb[fgb_gbasis_elim](ics, 0, [seq(1-t[i]*op(i, ineqs), i=1..nops(ineqs))], [op(indets(ics))]);
+    local y2, Dx, g2, deq, pars, ics, ics2, icspar, order, k, i, t, partable, init_point, basis;
+    if type(LDE, 'set') then
+        deq := op(remove(type, LDE, `=`));
+        ics := [op(select(type, LDE, `=`))];
+        init_point := op([1, 1, 1], ics);
+        print(deq,ics,init_point);
+        #for k from 1 to nops(ics) do
+        #    if not type(op(2, ics[k]), 'ratpoly'('rational')) then
+        #        partable[k] := op(2, ics[k]);
+        #        ics[k] := op(1, ics[k])=icspars[k]
+        #    end if
+        #end do;
+        if eval(subs(x=init_point, g)) = init_point then
+            ics2 := map(degree, map(DETools[de2diffop], subs(init_point=x, map2(op, 1, ics)), y(x), [Dx, x]), Dx);
+            for k from 1 to nops(ics2) do
+                if ics2[k] > 0 then
+                    order := ics2[k];
+                    ics2[k] := diff(y(g2(x)), x$ics2[k]);
+                    ics2[k] := (D@@order)(y)(init_point) = eval(subs(g2=(_ -> subs(x=_, g)), x=init_point, ics2[k]))
+                else
+                    ics2[k] := y(init_point) = op(2, ics[k])
+                end if
+            end do
+        # try to determine the initial conditions at x=g(init_point)
+        else
+            deq := subs(x=_x, y=_y, deq);
+            if assigned(diffeqs_table[deq]) then
+                #...
+            end if;
+        end if;
+        print(gfun[poltodiffeq](LDE2, [{gfun[algebraicsubs](deq, gfun[algfuntoalgeq](g, y(x)), y(x)), op(ics2)}], [y(x)], y(x)))
     else
-        basis := Groebner[Basis](ics, lexdeg([seq(1-t[i]*op(i, ineqs), i=1..nops(ineqs))], [op(indets(ics))]));
-        for i from 1 to nops(pars) do
-            basis := remove(has, basis, t[i])
-        end do
+
     end if;
-    return basis;
 end proc;
 
 algeqtoseries := proc (pol, y, x, x0, order:=6)
@@ -369,6 +397,15 @@ permutations := proc (l, i:=1)
     return [seq(seq([seq(`if`(k<j, res[p][k], `if`(k=j, l[i], res[p][k-1])), k=1..nops(res[p])+1)], j=1..nops(res[p])+1), p=1..nops(res))]
 end proc;
 
+gcdlist := proc (l, i:=1)
+    if nops(l) = i then
+        return l[i]
+    else
+        return gcd(l[i], gcdlist(l, i+1))
+    end if
+end proc;
+
+
 #solve_singularities
 # Input:
 #  LDE: a linear differential equation
@@ -382,6 +419,7 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
     local dom1, dom2, tab1, tab2, degs, deg, LDE2, deq2, A, k, i, j, l, m, degcmp, ind, factor1, factor2, branch, poss, p, basis, sing, s, s2, fs1, fs2, tay, tay0, t, g2, pol, pol2, comp;
     degcmp := proc(p, q) degree(p, x) >= degree(q, x) end proc;
     if degree([PDETools[dcoeffs](deq, y(x))][1], x) <> 0 then
+        # order factors by degree
         dom1 := sort(map2(op, 1, factors([PDETools[dcoeffs](LDE, y(x))][1])[2..][1]), degcmp);
         dom2 := sort(map2(op, 1, factors([PDETools[dcoeffs](deq, y(x))][1])[2..][1]), degcmp);
         degs := map(degree, dom1, x);
@@ -389,6 +427,7 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
             return false
         end if;
         degs := {op(degs)};
+        # each singularity of deq must be send on a singularity of LDE of the same degree
         for deg in degs do
             poss[deg] := {};
             tab1[deg], dom1 := selectremove((_ -> degree(_, x) = deg), dom1);
@@ -401,9 +440,16 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
                         for branch in `algcurves/puiseux`(g, x=RootOf(factor2, x, 'index'=l), y, 1) do
                             pol := numer(evala(subs(x=branch, factor1)));
                             for pol in [allvalues(pol)] do
-                                for pol in factors(pol)[2] do
-                                    poss[deg] := poss[deg] union {[deg, i, j, pol[1]]}
-                                end do
+                                pol := factors(pol);
+                                if pol[1] <> 0 then
+                                    for pol in pol[2] do
+                                        if not pol[1] in ineqs then
+                                            poss[deg] := poss[deg] union {[deg, i, j, pol[1]]}
+                                        end if
+                                    end do
+                                else
+                                    poss[deg] := poss[deg] union {[deg, i, j, 0]}
+                                end if
                             end do
                         end do
                     end do
@@ -413,6 +459,7 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
     else
         degs := {}
     end if;
+    # add infinity if it is a singularity
     if infinity in `union`(op(map2(op, 2, [DETools[singularities](deq, y(x))]))) then
         degs := degs union {0};
         poss[0] := {};
@@ -432,32 +479,49 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
         else
             for factor1 in tab1[1] do
                 pol := numer(evala(subs(x=RootOf(g2, y), factor1)));
-                for pol in factors(pol)[2] do
-                    poss[0] := poss[0] union {[0, 0, 0, pol[1]]}
-                end do
+                pol := factors(pol);
+                if pol[1] <> 0 then
+                    for pol in pol[2] do
+                        poss[0] := poss[0] union {[0, 0, 0, pol[1]]}
+                    end do
+                else
+                    poss[0] := {[0, 0, 0, 0]};
+                end if
             end do
         end if;
     end if;
     degs := [op(degs)];
+    # all possible singularity injections
     poss := [op(product([seq(poss[k], k=degs)], 4))];
     sing := {};
-    ind := [op(indets(LDE, 'name') union indets(deq, 'name') union indets(g, 'name'))];
+    ind := [op(indets(LDE, 'name') union indets(deq, 'name') union indets(g, 'name') minus {x, y})];
     A := OreTools[SetOreRing](x, 'differential');
+    # find all values of x such that g(x) is a singularity of LDE
     for deg in degs do
         if deg <> 0 then
             for i from 1 to nops(tab1[deg]) do
                 factor1 := tab1[deg][i];
-                try
-                    sing := sing union {[[deg, i], RootOf(subs(y=RootOf(factor1, x), g), x)]}
-                catch: end try
+                pol := select((_ -> degcmp(_, x)) , map2(op, 1, factors(subs(y=RootOf(factor1, x), g))[2]));
+                for j from 1 to nops(pol) do
+                    branch := gcdlist([coeffs(pol[j], x)]);
+                    if branch in ineqs then
+                        factor2 := collect(normal(pol[j]/branch), x)
+                    else
+                        factor2 := pol[j]
+                    end if;
+                    try
+                        sing := sing union {[[deg, i, j], RootOf(factor2, x)]}
+                    catch: end try
+                end do
             end do
         else
-            sing := sing union {[[0, 0], infinity]}
+            sing := sing union {[[0, 0, 0], infinity]}
         end if
     end do;
     sing := [op(sing)];
     for i from 1 to nops(poss) do
         p := poss[i];
+        # compute the basis of the ideal of the current possiblity
         if use_FGb then
             basis := FGb[fgb_gbasis_elim]([op(p[2]), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], 0, [seq(t[k], k=1..nops(ineqs))], ind)
         else
@@ -466,6 +530,8 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
                 basis := remove(has, b, t[j])
             end do
         end if;
+        if basis = 0 then basis := [] end if;
+        # normalize all equations with respect to the basis
         g2 := PolynomialTools[CoefficientList](g, y);
         g2 := map(PolynomialTools[CoefficientList], g2, x);
         for j from 1 to nops(g2) do
@@ -475,7 +541,8 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
         LDE2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](LDE, y, A), x, basis, ind), y, A);
         deq2 := OreTools[Converters][FromOrePolyToLinearEquation](normalize_ore(OreTools[Converters][FromLinearEquationToOrePoly](deq, y, A), x, basis, ind), y, A);
         poss[i] := [op(poss[i]), basis, g2, LDE2, deq2];
-        for s in sing do
+        for j from 1 to nops(sing) do
+            s := sing[j];
             if ldegree(g2, y) <> 0 then
                 break
             end if;
@@ -483,8 +550,9 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
                 s2 := s[2];
                 pol := 1/x
             elif type(s[2], 'RootOf') then
-                s2 := RootOf(PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], PolynomialTools[CoefficientList](op(1, s[2]), _Z), basis, tdeg(op(ind))), x), x);
-                pol := op(1, s2);
+                # polynomial may be reducible after normalization
+                pol := PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], PolynomialTools[CoefficientList](op(1, s[2]), _Z), basis, tdeg(op(ind))), x);
+                s2 := RootOf(factors(pol)[2][1][1], x)
             elif type(s[2], 'polynom') then
                 s2 := Groebner[NormalForm](s[2], basis, tdeg(op(ind)));
                 pol := x - s2;
@@ -507,9 +575,9 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
             tay := tcoeff(tay, x);
             fs1[s[1]] := formal_sol(LDE2, y, x, `if`(s[1][1]=0, infinity, RootOf(tab1[s[1][1]][s[1][2]], x)));
             fs1[s[1]][2] := fs1[s[1]][2]*deg;
-            comp[p[1]][s[1]] := {seq(pol^(fs1[s[1]][1][2] - k[1][2])*ln(pol)^(fs1[s[1]][1][3] - k[1][3]), k=permutations(formal_sol(deq2, y, x, s2)[..-2]))};
+            comp[p[1]][j] := {seq(pol^(fs1[s[1]][1][2] - k[1][2])*ln(pol)^(fs1[s[1]][1][3] - k[1][3]), k=permutations(formal_sol(deq2, y, x, s2)[..-2]))};
         end do;
-        comp[p[1]] := map2(op, 2, [op(product([seq(comp[p[1]][k[1]], k=sing)]))]);
+        comp[p[1]] := map2(op, 2, [op(product([seq(comp[p[1]][k], k=1..nops(sinh))]))]);
     end do;
     for i from 1 to nops(poss) do
         poss[i] := [poss[i][-4], poss[i][-3], poss[i][-2], poss[i][-1], map((_ -> `*`(op(_))), comp[p[1]])]
@@ -564,7 +632,7 @@ end proc;
 # Output:
 #
 identities := proc (LDE, y, x, tab:=[], itype:='homography', ineqs:={}, basis:=[])
-    local g, g2, g3, LDE2, deq2, deq3, ineqs2, basis2, sys, ndeqpar, ics, par, pars, ex, poss, deqsub, deq, rdeq, rdeq2, deqpar, icspars, sol, sol2, i, j;
+    local g, g2, g3, LDE2, deq2, deq3, ineqs2, basis2, sys, ndeqpar, ics, init_point, par, pars, ex, poss, deqsub, deq, rdeq, rdeq2, deqpar, icspars, sol, sol2, i, j;
     g, sys := getfunction(x, par, itype);
     if type(LDE, 'set') then
         deq := op(remove(type, LDE, `=`));
@@ -576,17 +644,19 @@ identities := proc (LDE, y, x, tab:=[], itype:='homography', ineqs:={}, basis:=[
         ndeqpar := nops(pars);
         deq := subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), deq);
         ineqs2 := ineqs union sys union subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), ineqs union sys);
+        print(LDE, deq, ineqs2);
         for poss in solve_singularities(LDE, y, x, deq, gfun[algfuntoalgeq](g, y(x)), ineqs2) do
             if poss <> false then
             basis2 := [op(poss[1]), op(basis)];
             g2 := poss[2];
             LDE2 := poss[3];
             deq2 := poss[4];
-            if g2 <> 0 and LDE2 <> 0 and deq2 <> 0 then
+            if g2 <> 0 and LDE2 <> y(x) and deq2 <> y(x) then
                 deqsub := gfun[algebraicsubs](LDE2, g2, y(x));
                 for ex in poss[5] do
                     deq3 := gfun[`diffeq*diffeq`](gfun:-holexprtodiffeq(ex, y(x)), deq2, y(x));
                     rdeq, basis2 := symmetries(deqsub, y, x, deq3, ineqs2, basis2);
+                    if rdeq <> y(x) then
                     for sol in [solve(basis2, {seq(deqpar[i], i=1..ndeqpar)} union indets(LDE, 'name') union indets(g) minus {x})] do
                         sol := [allvalues(sol)][1];
                         g3 := subs(op(sol), g);
@@ -595,12 +665,24 @@ identities := proc (LDE, y, x, tab:=[], itype:='homography', ineqs:={}, basis:=[
                             if degree(denom(g3), x) = 0 then
                                 g3 := collect(g3, x)
                             end if;
-                            if true or gfun[poltodiffeq](rdeq2, [gfun[algebraicsubs](LDE2, gfun[algfuntoalgeq](g3, y(x)), y(x), {seq((D@@(i-1))(y)(0)=subs(x=0, (D@@(i-1))(g)(x)), i=1..2*PDETools[difforder](LDE2))})], [y(x)], y(x)) = y(x) then
+                            if true or gfun[poltodiffeq](rdeq2, [gfun[algebraicsubs](LDE2, gfun[algfuntoalgeq](g3, y(x)), y(x))], [y(x)], y(x)) = y(x) then
                                 printf("%a(%a) satisfies:", y, g3);
-                                print({deq, y(0)=subs(x=0, y(g3)), seq((D@@(i-1))(y)(0)=subs(x=0, diff(y(g3), x$(i-1))), i=2..PDETools[difforder](deq))})
+                                if type(LDE, set) then
+                                    ics := select(type, LDE, `=`);
+                                    init_point := op([1, 1, 1], ics);
+                                    if subs(x=init_point, g3) = init_point then
+
+                                    else
+
+                                    end if;
+                                else
+
+                                end if;
+                                #print({deq, y(0)=subs(x=0, y(g3)), seq((D@@(i-1))(y)(0)=subs(x=0, diff(y(g3), x$(i-1))), i=2..PDETools[difforder](deq))})
                             end if;
                         end if
                     end do
+                    end if
                 end do
             end if end if
         end do
