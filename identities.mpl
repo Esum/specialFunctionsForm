@@ -68,7 +68,7 @@ end proc;
 #  pars: the formal parameters occuring in R
 #  ineqs: parameters that must not be canceled
 #  basis: a basis of an ideal
-#  depth: maximum number of ideal to process
+#  depth: maximum number of ideals to process
 #  default: default value for the gcd
 # Output: a gcd that is different from 1 if possible and a Groebner basis of the ideal that produces this gcd
 #
@@ -81,7 +81,7 @@ searchideal := proc (R, i, n, x, pars, ineqs, basis, depth, default)
             return OreTools[MonicAssociate](R[i-1]), [0]
         end if
     end if;
-    # try to cancel R[i] entirely first then try to cancel the j leading terms
+    # try to cancel R[i] entirely first then try to cancel the jth leading terms
     for j in [nops(R[i]), seq(k, k=1..nops(R[i])-1)] do
         if use_FGb then
             b := FGb[fgb_gbasis_elim]([op(basis), op(map(coeffs, map(collect, map(numer, [seq(op(nops(R[i]) - k + 1, R[i]), k=1..j)]), x), x)), seq(1-t[k]*op(k, ineqs), k=1..nops(ineqs))], 0, [seq(t[k], k=1..nops(ineqs))], pars);
@@ -143,21 +143,23 @@ end proc;
 
 #diffeqs_table
 # A table indexed by differential equations with values its basis of solutions in the format
+# diffeqs_table[LDE][x0] is a table
 # [[e1, [e1(x0), e1'(x0), ..., e1^(n)(x0)],
 #   ...
-#  [en, [en(x0), en'(x0), ..., en^(n)(x0)]],
-#  x0]
-# where e1, ..., en is the basis of solutions of the differential equation
+#  [en, [en(x0), en'(x0), ..., en^(n)(x0)]]]
+# where e1, ..., en is the basis of solutions of the differential equation at x0
+# diffeqs_table[LDE][""] is the canonical initial point of LDE (and is an in index in diffeqs_table[LDE])
+# diffeqs_table[LDE]["pars"] is the list of parameters that occur in LDE
 #
-diffeqs_table[(D@@2)(_y)(_x) + _y(_x)] := [
-    [sin, [_y(0)=0, D(_y)(0)=1]],
-    [cos, [_y(0)=1, D(_y)(0)=0]],
-    0];
+diffeqs_table[(D@@2)(_y)(_x) + _y(_x)] := table([
+    0 = [[sin, [_y(0)=0, D(_y)(0)=1]],
+         [cos, [_y(0)=1, D(_y)(0)=0]]],
+    "" = 0]);
 
-diffeqs_table[(D@@2)(_y)(_x) - _y(_x)] := [
-    [sinh, [_y(0)=0, D(_y)(0)=1]],
-    [cosh, [_y(0)=1, D(_y)(0)=0]],
-    0];
+diffeqs_table[(D@@2)(_y)(_x) - _y(_x)] := table([
+    0 = [[sinh, [_y(0)=0, D(_y)(0)=1]],
+         [cosh, [_y(0)=1, D(_y)(0)=0]]],
+    "" = 0]);
 
 diffeqs_table[(_x^2 + 1)*(D@@2)(_y)(_x) + 2*_x*(D)(_y)(_x)] := [
     [arctan, [_y(0)=0, D(_y)(0)=1]],
@@ -213,40 +215,64 @@ end proc;
 # Output: 
 #
 recognize := proc (LDE, LDE2, g, y, x, ineqs, icspars)
-    local y2, Dx, g2, deq, pars, ics, ics2, icspar, order, k, i, t, partable, init_point, basis;
+    local y2, Dx, g2, deq, res, pars, ics, ics2, order, k, i, t, partable, init_point, basis;
     if type(LDE, 'set') then
         deq := op(remove(type, LDE, `=`));
         ics := [op(select(type, LDE, `=`))];
         init_point := op([1, 1, 1], ics);
         print(deq,ics,init_point);
-        #for k from 1 to nops(ics) do
-        #    if not type(op(2, ics[k]), 'ratpoly'('rational')) then
-        #        partable[k] := op(2, ics[k]);
-        #        ics[k] := op(1, ics[k])=icspars[k]
-        #    end if
-        #end do;
+        # the initial point is a fixed point of g
         if eval(subs(x=init_point, g)) = init_point then
             ics2 := map(degree, map(DETools[de2diffop], subs(init_point=x, map2(op, 1, ics)), y(x), [Dx, x]), Dx);
             for k from 1 to nops(ics2) do
                 if ics2[k] > 0 then
                     order := ics2[k];
                     ics2[k] := diff(y(g2(x)), x$ics2[k]);
-                    ics2[k] := (D@@order)(y)(init_point) = eval(subs(g2=(_ -> subs(x=_, g)), x=init_point, ics2[k]))
+                    ics2[k] := (D@@order)(y)(init_point) = eval(subs(x=init_point, eval(subs(g2(x)=g, ics2[k]))))
                 else
                     ics2[k] := y(init_point) = op(2, ics[k])
                 end if
             end do
         # try to determine the initial conditions at x=g(init_point)
         else
+            return false, [1];
             deq := subs(x=_x, y=_y, deq);
-            if assigned(diffeqs_table[deq]) then
-                #...
+            if assigned(diffeqs_table[deq][init_point]) then
+
             end if;
         end if;
-        print(gfun[poltodiffeq](LDE2, [{gfun[algebraicsubs](deq, gfun[algfuntoalgeq](g, y(x)), y(x)), op(ics2)}], [y(x)], y(x)))
     else
-
+        deq := subs(x=_x, y=_y, LDE);
+        if assigned(diffeqs_table[deq]) then
+            for k in [indices(diffeqs_table[deq], 'nolist')] do
+                if eval(subs(x=k, g)) = k then
+                    init_point := k;
+                    break
+                end if
+            end do;
+        end if;
+        if not assigned(init_point) then
+            init_point := 0
+        end if;
+        ics := [y(init_point) = icspars[1], seq((D@@i)(y)(init_point) = icspars[i+1], i=1..(PDETools[difforder](deq)-1))];
+        ics2 := map(degree, map(DETools[de2diffop], subs(init_point=x, map2(op, 1, ics)), y(x), [Dx, x]), Dx);
+        for k from 1 to nops(ics2) do
+            if ics2[k] > 0 then
+                order := ics2[k];
+                ics2[k] := diff(y(g2(x)), x$ics2[k]);
+                ics2[k] := (D@@order)(y)(init_point) = eval(subs(x=init_point, eval(subs(g2(x)=g, ics2[k]))))
+            else
+                ics2[k] := y(init_point) = op(2, ics[k])
+            end if
+        end do
     end if;
+    deq := subs(_x=x, _y=y, deq);
+    res := gfun[poltodiffeq](numer(LDE2), [{gfun[algebraicsubs](deq, gfun[algfuntoalgeq](g, y(x)), y(x)), op(ics2)}], [y(x)], y(x));
+    if res = y(x) then
+        return true, []
+    else
+        return false, map2(op, 2, [op(select(type, res, `=`))])
+    end if
 end proc;
 
 algeqtoseries := proc (pol, y, x, x0, order:=6)
@@ -551,6 +577,7 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
                 pol := 1/x
             elif type(s[2], 'RootOf') then
                 # polynomial may be reducible after normalization
+                # keep only the first factor for now
                 pol := PolynomialTools[FromCoefficientList](map(Groebner[NormalForm], PolynomialTools[CoefficientList](op(1, s[2]), _Z), basis, tdeg(op(ind))), x);
                 s2 := RootOf(factors(pol)[2][1][1], x)
             elif type(s[2], 'polynom') then
@@ -582,9 +609,7 @@ solve_singularities := proc (LDE, y, x, deq, g, ineqs:={})
     for i from 1 to nops(poss) do
         poss[i] := [poss[i][-4], poss[i][-3], poss[i][-2], poss[i][-1], map((_ -> `*`(op(_))), comp[p[1]])]
     end do;
-    return poss;
-    #return [seq([`if`(k[1] in [indices(comp, 'nolist')], comp[k[1]], NULL)], k=poss)]
-    #return poss, [seq([seq(`if`(k[1] in [indices(comp, 'nolist')], comp[k[1]][m[1]], NULL), m=sing)], k=poss)];
+    return poss
 end proc;
 
 #getfunction
@@ -632,20 +657,20 @@ end proc;
 # Output:
 #
 identities := proc (LDE, y, x, tab:=[], itype:='homography', ineqs:={}, basis:=[])
-    local g, g2, g3, LDE2, deq2, deq3, ineqs2, basis2, sys, ndeqpar, ics, init_point, par, pars, ex, poss, deqsub, deq, rdeq, rdeq2, deqpar, icspars, sol, sol2, i, j;
+    local g, g2, g3, LDE2, deq0, deq2, deq3, ineqs2, basis2, sys, ndeqpar, ics, init_point, par, pars, ex, poss, deqsub, deq, rdeq, rdeq2, deqpar, icspars, sol, sol2, i, j;
     g, sys := getfunction(x, par, itype);
     if type(LDE, 'set') then
-        deq := op(remove(type, LDE, `=`));
+        deq0 := op(remove(type, LDE, `=`));
     else
-        deq := LDE
+        deq0 := LDE
     end if;
-    for deq in {deq, op(tab)} do
+    for deq in {deq0, op(tab)} do
         pars := [op(indets(deq, 'name') minus {x})];
         ndeqpar := nops(pars);
         deq := subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), deq);
         ineqs2 := ineqs union sys union subs(seq(pars[i]=deqpar[i], i=1..nops(pars)), ineqs union sys);
         print(LDE, deq, ineqs2);
-        for poss in solve_singularities(LDE, y, x, deq, gfun[algfuntoalgeq](g, y(x)), ineqs2) do
+        for poss in solve_singularities(deq0, y, x, deq, gfun[algfuntoalgeq](g, y(x)), ineqs2) do
             if poss <> false then
             basis2 := [op(poss[1]), op(basis)];
             g2 := poss[2];
@@ -665,21 +690,8 @@ identities := proc (LDE, y, x, tab:=[], itype:='homography', ineqs:={}, basis:=[
                             if degree(denom(g3), x) = 0 then
                                 g3 := collect(g3, x)
                             end if;
-                            if true or gfun[poltodiffeq](rdeq2, [gfun[algebraicsubs](LDE2, gfun[algfuntoalgeq](g3, y(x)), y(x))], [y(x)], y(x)) = y(x) then
-                                printf("%a(%a) satisfies:", y, g3);
-                                if type(LDE, set) then
-                                    ics := select(type, LDE, `=`);
-                                    init_point := op([1, 1, 1], ics);
-                                    if subs(x=init_point, g3) = init_point then
-
-                                    else
-
-                                    end if;
-                                else
-
-                                end if;
-                                #print({deq, y(0)=subs(x=0, y(g3)), seq((D@@(i-1))(y)(0)=subs(x=0, diff(y(g3), x$(i-1))), i=2..PDETools[difforder](deq))})
-                            end if;
+                            print(rdeq2, g3);
+                            print(recognize(LDE, rdeq2, g3, y, x, {}, icspars))
                         end if
                     end do
                     end if
